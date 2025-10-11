@@ -1,0 +1,8 @@
+C:\Users\tasta\Downloads\cmder\MIS-321-TeamProject2\api\obj\Debug\net8.0\OceanFriendlyProductFinder.csproj.AssemblyReference.cache
+C:\Users\tasta\Downloads\cmder\MIS-321-TeamProject2\api\obj\Debug\net8.0\OceanFriendlyProductFinder.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\tasta\Downloads\cmder\MIS-321-TeamProject2\api\obj\Debug\net8.0\OceanFriendlyProductFinder.AssemblyInfoInputs.cache
+C:\Users\tasta\Downloads\cmder\MIS-321-TeamProject2\api\obj\Debug\net8.0\OceanFriendlyProductFinder.AssemblyInfo.cs
+C:\Users\tasta\Downloads\cmder\MIS-321-TeamProject2\api\obj\Debug\net8.0\OceanFriendlyProductFinder.csproj.CoreCompileInputs.cache
+C:\Users\tasta\Downloads\cmder\MIS-321-TeamProject2\api\obj\Debug\net8.0\OceanFriendlyProductFinder.MvcApplicationPartsAssemblyInfo.cs
+C:\Users\tasta\Downloads\cmder\MIS-321-TeamProject2\api\obj\Debug\net8.0\OceanFriendlyProductFinder.MvcApplicationPartsAssemblyInfo.cache
+C:\Users\tasta\Downloads\cmder\MIS-321-TeamProject2\api\obj\Debug\net8.0\OceanFriendlyProductFinder.sourcelink.json
