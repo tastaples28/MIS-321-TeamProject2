@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.Sqlite;
 using OceanFriendlyProductFinder.Models;
+using OceanFriendlyProductFinder.Services;
 
 namespace OceanFriendlyProductFinder.Controllers
 {

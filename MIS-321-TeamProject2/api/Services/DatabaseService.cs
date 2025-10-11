@@ -1,7 +1,7 @@
 using Microsoft.Data.Sqlite;
 using System.Data;
 
-namespace OceanFriendlyProductFinder
+namespace OceanFriendlyProductFinder.Services
 {
     public class DatabaseService
     {

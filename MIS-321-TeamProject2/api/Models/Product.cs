@@ -39,6 +39,8 @@ namespace OceanFriendlyProductFinder.Models
         public int? MinOceanScore { get; set; }
         public int? MaxOceanScore { get; set; }
         public bool? IsReefSafe { get; set; }
+        public int? Page { get; set; }
+        public int? PageSize { get; set; }
     }
 
     public class ProductSearchResponse
