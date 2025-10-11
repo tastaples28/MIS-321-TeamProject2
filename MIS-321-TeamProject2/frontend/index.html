@@ -1,0 +1,975 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🌊 Ocean-Friendly Product Finder</title>
+    <link rel="icon" type="image/png" href="assets/logo/main-logo.png">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --ocean-deep: #0B1426;
+            --ocean-medium: #1E3A8A;
+            --ocean-light: #3B82F6;
+            --coral-pink: #F87171;
+            --sea-green: #10B981;
+            --seafoam: #06B6D4;
+            --pearl-white: #F8FAFC;
+            --wave-blue: #0EA5E9;
+            --tropical-blue: #0F766E;
+            --aqua-mint: #14B8A6;
+        }
+
+        body {
+            background: linear-gradient(135deg, var(--ocean-deep) 0%, var(--ocean-medium) 25%, var(--wave-blue) 50%, var(--seafoam) 75%, var(--aqua-mint) 100%);
+            background-size: 400% 400%;
+            animation: oceanWave 15s ease infinite;
+            min-height: 100vh;
+            font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        @keyframes oceanWave {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .navbar {
+            background: rgba(248, 250, 252, 0.95) !important;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 8px 32px rgba(11, 20, 38, 0.1);
+            border-bottom: 1px solid rgba(14, 165, 233, 0.1);
+        }
+
+        .navbar-brand {
+            font-weight: 700;
+            color: var(--ocean-medium) !important;
+            font-size: 1.4rem;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            display: flex;
+            align-items: center;
+            margin-right: auto;
+        }
+
+        .navbar-logo {
+            height: 80px;
+            width: auto;
+            margin-left: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+            transition: transform 0.3s ease;
+        }
+
+        .navbar-logo:hover {
+            transform: scale(1.05);
+        }
+
+        .hero-logo {
+            height: 120px;
+            width: auto;
+            margin-bottom: 30px;
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            transition: transform 0.4s ease;
+        }
+
+        /* Additional logo styling */
+        .logo-watermark {
+            position: absolute;
+            opacity: 0.1;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        .logo-small {
+            height: 24px;
+            width: auto;
+            border-radius: 4px;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+
+        .logo-medium {
+            height: 60px;
+            width: auto;
+            border-radius: 12px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .logo-medium:hover {
+            transform: scale(1.05);
+        }
+
+        .logo-card {
+            height: 80px;
+            width: auto;
+            border-radius: 16px;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+            margin-bottom: 20px;
+        }
+
+        .logo-favicon {
+            height: 20px;
+            width: auto;
+            border-radius: 3px;
+            margin-right: 6px;
+        }
+
+        .logo-section-header {
+            height: 40px;
+            width: auto;
+            border-radius: 8px;
+            margin-right: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Responsive logo sizing */
+        @media (max-width: 768px) {
+            .navbar-logo {
+                height: 60px;
+                margin-left: 15px;
+            }
+            
+            .hero-logo {
+                height: 80px;
+                margin-bottom: 20px;
+            }
+            
+            .navbar-brand {
+                font-size: 1.1rem;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .navbar-brand span {
+                font-size: 0.9rem;
+            }
+            
+            .navbar-logo {
+                height: 50px;
+                margin-left: 10px;
+            }
+        }
+
+        .nav-link {
+            color: var(--ocean-medium) !important;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            border-radius: 8px;
+            margin: 0 4px;
+            padding: 8px 16px !important;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .nav-link:hover {
+            background: linear-gradient(135deg, var(--wave-blue), var(--seafoam));
+            color: white !important;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(14, 165, 233, 0.3);
+        }
+
+        .nav-link.active {
+            background: linear-gradient(135deg, var(--ocean-deep), var(--wave-blue));
+            color: white !important;
+            transform: translateY(-1px);
+            box-shadow: 0 6px 16px rgba(14, 165, 233, 0.4);
+            font-weight: 600;
+        }
+
+        .nav-link.active:hover {
+            background: linear-gradient(135deg, var(--ocean-deep), var(--wave-blue));
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(14, 165, 233, 0.5);
+        }
+
+        .hero-section {
+            background: linear-gradient(135deg, rgba(11, 20, 38, 0.9), rgba(30, 58, 138, 0.8), rgba(14, 165, 233, 0.7)), 
+                        url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 300"><path d="M0,96L48,112C96,128,192,160,288,160C384,160,480,128,576,112C672,96,768,96,864,112C960,128,1056,160,1152,160C1248,160,1344,128,1392,112L1440,96L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z" fill="%23ffffff" opacity="0.1"/></svg>');
+            background-size: cover;
+            background-position: center;
+            color: white;
+            padding: 80px 0;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 300"><path d="M0,96L48,112C96,128,192,160,288,160C384,160,480,128,576,112C672,96,768,96,864,112C960,128,1056,160,1152,160C1248,160,1344,128,1392,112L1440,96L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z" fill="%23ffffff" opacity="0.05"/></svg>');
+            animation: waveMove 20s linear infinite;
+        }
+
+        @keyframes waveMove {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        .ocean-score-badge {
+            display: inline-block;
+            padding: 12px 20px;
+            border-radius: 25px;
+            font-weight: 600;
+            font-size: 0.9em;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            backdrop-filter: blur(10px);
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
+        }
+
+        .score-safe {
+            background: linear-gradient(135deg, var(--sea-green), var(--aqua-mint));
+            color: white;
+            border-color: rgba(16, 185, 129, 0.3);
+        }
+
+        .score-moderate {
+            background: linear-gradient(135deg, #F59E0B, #FCD34D);
+            color: white;
+            border-color: rgba(245, 158, 11, 0.3);
+        }
+
+        .score-harmful {
+            background: linear-gradient(135deg, var(--coral-pink), #EF4444);
+            color: white;
+            border-color: rgba(248, 113, 113, 0.3);
+        }
+
+        .card {
+            border: none;
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(11, 20, 38, 0.1);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            background: rgba(248, 250, 252, 0.95);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(14, 165, 233, 0.1);
+            overflow: hidden;
+        }
+
+        .card:hover {
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: 0 20px 40px rgba(11, 20, 38, 0.2);
+            border-color: rgba(14, 165, 233, 0.3);
+        }
+
+        .product-card {
+            height: 100%;
+        }
+
+        .product-image {
+            height: 220px;
+            object-fit: cover;
+            border-radius: 20px 20px 0 0;
+            transition: transform 0.4s ease;
+        }
+
+        .product-card:hover .product-image {
+            transform: scale(1.05);
+        }
+
+        .filter-section {
+            background: rgba(248, 250, 252, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 40px;
+            box-shadow: 0 8px 32px rgba(11, 20, 38, 0.1);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(14, 165, 233, 0.1);
+        }
+
+        .form-control, .form-select {
+            border-radius: 12px;
+            border: 2px solid rgba(14, 165, 233, 0.2);
+            padding: 12px 16px;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.8);
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: var(--wave-blue);
+            box-shadow: 0 0 0 0.2rem rgba(14, 165, 233, 0.25);
+            background: white;
+        }
+
+        .btn-ocean {
+            background: linear-gradient(135deg, var(--wave-blue), var(--seafoam));
+            border: none;
+            color: white;
+            border-radius: 25px;
+            padding: 12px 30px;
+            font-weight: 600;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 15px rgba(14, 165, 233, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-ocean::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .btn-ocean:hover::before {
+            left: 100%;
+        }
+
+        .btn-ocean:hover {
+            transform: translateY(-3px) scale(1.05);
+            box-shadow: 0 8px 25px rgba(14, 165, 233, 0.4);
+            color: white;
+        }
+
+        .btn-ocean:active {
+            transform: translateY(-1px) scale(1.02);
+        }
+
+        .loading-spinner {
+            display: none;
+            text-align: center;
+            padding: 50px;
+        }
+
+        .page-section {
+            display: none;
+        }
+
+        .page-section.active {
+            display: block;
+        }
+
+        .admin-panel {
+            background: rgba(248, 250, 252, 0.95);
+            border-radius: 20px;
+            padding: 40px;
+            margin: 30px 0;
+            box-shadow: 0 8px 32px rgba(11, 20, 38, 0.1);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(14, 165, 233, 0.1);
+        }
+
+        .analytics-chart {
+            background: rgba(248, 250, 252, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            margin: 30px 0;
+            box-shadow: 0 8px 32px rgba(11, 20, 38, 0.1);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(14, 165, 233, 0.1);
+        }
+
+        .wave-animation {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .wave-animation::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            animation: wave 3s infinite;
+        }
+
+        @keyframes wave {
+            0% { left: -100%; }
+            100% { left: 100%; }
+        }
+
+        .ingredient-list {
+            max-height: 200px;
+            overflow-y: auto;
+            padding: 10px;
+            border-radius: 12px;
+            background: rgba(248, 250, 252, 0.5);
+        }
+
+        .ingredient-item {
+            padding: 8px 16px;
+            margin: 4px 0;
+            border-radius: 12px;
+            font-size: 0.9em;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            border: 1px solid transparent;
+        }
+
+        .ingredient-item:hover {
+            transform: translateX(5px);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .ingredient-safe {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(20, 184, 166, 0.1));
+            color: var(--sea-green);
+            border-color: rgba(16, 185, 129, 0.2);
+        }
+
+        .ingredient-harmful {
+            background: linear-gradient(135deg, rgba(248, 113, 113, 0.1), rgba(239, 68, 68, 0.1));
+            color: var(--coral-pink);
+            border-color: rgba(248, 113, 113, 0.2);
+        }
+
+        /* Additional Bootstrap enhancements */
+        .btn-outline-primary {
+            border-radius: 20px;
+            border: 2px solid var(--wave-blue);
+            color: var(--wave-blue);
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .btn-outline-primary:hover {
+            background: var(--wave-blue);
+            border-color: var(--wave-blue);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(14, 165, 233, 0.3);
+        }
+
+        .btn-outline-danger {
+            border-radius: 20px;
+            border: 2px solid var(--coral-pink);
+            color: var(--coral-pink);
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .btn-outline-danger:hover {
+            background: var(--coral-pink);
+            border-color: var(--coral-pink);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(248, 113, 113, 0.3);
+        }
+
+        .table {
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .table thead th {
+            background: linear-gradient(135deg, var(--ocean-medium), var(--wave-blue));
+            color: white;
+            border: none;
+            font-weight: 600;
+        }
+
+        .table tbody tr {
+            transition: all 0.3s ease;
+        }
+
+        .table tbody tr:hover {
+            background: rgba(14, 165, 233, 0.05);
+            transform: scale(1.01);
+        }
+
+        .modal-content {
+            border-radius: 20px;
+            border: none;
+            box-shadow: 0 20px 40px rgba(11, 20, 38, 0.3);
+            backdrop-filter: blur(20px);
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, var(--ocean-medium), var(--wave-blue));
+            color: white;
+            border-radius: 20px 20px 0 0;
+            border: none;
+        }
+
+        .modal-footer {
+            border-radius: 0 0 20px 20px;
+            border: none;
+            background: rgba(248, 250, 252, 0.95);
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-light fixed-top">
+        <div class="container">
+            <a class="navbar-brand" href="#" onclick="showPage('home')">
+                <span>Ocean-Friendly Product Finder</span>
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" onclick="showPage('home')">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" onclick="showPage('products')">Products</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" onclick="showPage('favorites')">Favorites</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" onclick="showPage('about')">About</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" onclick="showPage('admin')">Admin</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div id="app" class="container-fluid" style="margin-top: 80px;">
+        <!-- Watermark Logo -->
+        <div class="logo-watermark" style="top: 50%; left: 50%; transform: translate(-50%, -50%); width: 300px; height: 300px;">
+            <img src="assets/logo/main-logo.png" alt="Ocean-Friendly Logo" style="width: 100%; height: 100%; opacity: 0.05;">
+        </div>
+        
+        <!-- Home Page -->
+        <div id="home-page" class="page-section active">
+            <div class="hero-section wave-animation">
+                <div class="container">
+                    <div class="row align-items-center">
+                        <div class="col-lg-6">
+                            <h1 class="display-3 fw-bold mb-4 text-white">
+                                <i class="fas fa-water me-3"></i>Ocean-Friendly Product Finder
+                            </h1>
+                            <p class="lead mb-4 text-white-50 fs-4">Discover products that protect our oceans and marine life</p>
+                        </div>
+                        <div class="col-lg-6 text-center">
+                            <!-- Logo -->
+                            <div class="mb-4">
+                                <img src="assets/logo/main-logo.png" alt="Ocean-Friendly Logo" class="hero-logo" style="height: 400px;">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row justify-content-center mt-5">
+                        <div class="col-lg-8 text-center">
+                            
+                            <!-- Enhanced search with floating labels -->
+                    <div class="row justify-content-center">
+                        <div class="col-md-8">
+                                    <div class="input-group input-group-lg shadow-lg">
+                                        <span class="input-group-text bg-white border-0 rounded-start-4">
+                                            <i class="fas fa-search text-primary"></i>
+                                        </span>
+                                        <input type="text" class="form-control border-0 rounded-end-4" id="home-search" 
+                                               placeholder="Search for ocean-friendly products..." 
+                                               style="font-size: 1.3rem; padding: 20px;">
+                                        <button class="btn btn-ocean ms-2" type="button" onclick="searchFromHome()">
+                                            <i class="fas fa-search me-2"></i>Search
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Floating badges -->
+                            <div class="row mt-5">
+                                <div class="col-md-4">
+                                    <div class="card border-0 bg-transparent text-white">
+                                        <div class="card-body text-center">
+                                            <div class="ocean-score-badge score-safe mb-3">
+                                                <i class="fas fa-shield-alt me-2"></i>Ocean Safe
+                                            </div>
+                                            <h6>Reef-Friendly</h6>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="card border-0 bg-transparent text-white">
+                                        <div class="card-body text-center">
+                                            <div class="ocean-score-badge score-moderate mb-3">
+                                                <i class="fas fa-balance-scale me-2"></i>Moderate Impact
+                                            </div>
+                                            <h6>Mixed Ingredients</h6>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="card border-0 bg-transparent text-white">
+                                        <div class="card-body text-center">
+                                            <div class="ocean-score-badge score-harmful mb-3">
+                                                <i class="fas fa-exclamation-triangle me-2"></i>Harmful
+                                            </div>
+                                            <h6>Avoid Near Reefs</h6>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="container mt-5">
+                <div class="row g-4">
+                    <div class="col-md-4 mb-4">
+                        <div class="card text-center h-100 border-0 shadow-lg">
+                            <div class="card-body p-4">
+                                <div class="mb-4">
+                                    <img src="assets/logo/main-logo.png" alt="Ocean-Friendly Logo" class="logo-card">
+                                </div>
+                                <h5 class="card-title fw-bold text-dark">Ocean Score System</h5>
+                                <p class="card-text text-muted">Products rated 1-100 based on biodegradability, coral safety, fish safety, and environmental impact.</p>
+                                <div class="mt-3">
+                                    <span class="badge bg-success-subtle text-success px-3 py-2 rounded-pill">Smart Rating</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-4">
+                        <div class="card text-center h-100 border-0 shadow-lg">
+                            <div class="card-body p-4">
+                                <div class="mb-4">
+                                    <img src="assets/logo/main-logo.png" alt="Ocean-Friendly Logo" class="logo-card">
+                                </div>
+                                <h5 class="card-title fw-bold text-dark">Smart Search</h5>
+                                <p class="card-text text-muted">Find products by name, brand, category, or ingredients with advanced filtering options.</p>
+                                <div class="mt-3">
+                                    <span class="badge bg-primary-subtle text-primary px-3 py-2 rounded-pill">Advanced Filters</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-4">
+                        <div class="card text-center h-100 border-0 shadow-lg">
+                            <div class="card-body p-4">
+                                <div class="mb-4">
+                                    <img src="assets/logo/main-logo.png" alt="Ocean-Friendly Logo" class="logo-card">
+                                </div>
+                                <h5 class="card-title fw-bold text-dark">Save Favorites</h5>
+                                <p class="card-text text-muted">Create your personal collection of ocean-friendly products and track your eco-friendly choices.</p>
+                                <div class="mt-3">
+                                    <span class="badge bg-danger-subtle text-danger px-3 py-2 rounded-pill">Personal Collection</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Products Page -->
+        <div id="products-page" class="page-section">
+            <div class="container">
+                <div class="text-center mb-5">
+                    <div class="mb-4">
+                        <img src="assets/logo/main-logo.png" alt="Ocean-Friendly Logo" class="logo-medium">
+                    </div>
+                    <h2 class="display-5 fw-bold text-white mb-3">
+                        <i class="fas fa-search me-3"></i>Product Search
+                    </h2>
+                    <p class="lead text-white-50">Find the perfect ocean-friendly products for your needs</p>
+                </div>
+                
+                <!-- Search Filters -->
+                <div class="filter-section">
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="search-term" class="form-label">Search Term</label>
+                            <input type="text" class="form-control" id="search-term" placeholder="Product name, brand, or category">
+                        </div>
+                        <div class="col-md-2 mb-3">
+                            <label for="category-filter" class="form-label">Category</label>
+                            <select class="form-select" id="category-filter">
+                                <option value="">All Categories</option>
+                                <option value="Sunscreen">Sunscreen</option>
+                                <option value="Shampoo">Shampoo</option>
+                                <option value="Body Wash">Body Wash</option>
+                                <option value="Face Wash">Face Wash</option>
+                                <option value="Toothpaste">Toothpaste</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2 mb-3">
+                            <label for="min-score" class="form-label">Min Ocean Score</label>
+                            <input type="number" class="form-control" id="min-score" min="1" max="100" placeholder="1">
+                        </div>
+                        <div class="col-md-2 mb-3">
+                            <label for="max-score" class="form-label">Max Ocean Score</label>
+                            <input type="number" class="form-control" id="max-score" min="1" max="100" placeholder="100">
+                        </div>
+                        <div class="col-md-2 mb-3">
+                            <label class="form-label">&nbsp;</label>
+                            <button class="btn btn-ocean w-100" onclick="searchProducts()">
+                                <i class="fas fa-search"></i> Search
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Loading Spinner -->
+                <div id="loading-spinner" class="loading-spinner">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2">Searching for ocean-friendly products...</p>
+                </div>
+
+                <!-- Products Grid -->
+                <div id="products-grid" class="row">
+                    <!-- Products will be dynamically loaded here -->
+                </div>
+
+                <!-- Pagination -->
+                <nav aria-label="Products pagination" class="mt-4">
+                    <ul id="pagination" class="pagination justify-content-center">
+                        <!-- Pagination will be dynamically generated -->
+                    </ul>
+                </nav>
+            </div>
+        </div>
+
+        <!-- Favorites Page -->
+        <div id="favorites-page" class="page-section">
+            <div class="container">
+                <div class="text-center mb-5">
+                    <div class="mb-4">
+                        <img src="assets/logo/main-logo.png" alt="Ocean-Friendly Logo" class="logo-medium">
+                    </div>
+                    <h2 class="display-5 fw-bold text-white mb-3">
+                        <i class="fas fa-heart me-3"></i>My Favorites
+                    </h2>
+                    <p class="lead text-white-50">Your personal collection of ocean-friendly products</p>
+                </div>
+                <div id="favorites-grid" class="row">
+                    <!-- Favorites will be dynamically loaded here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- About Page -->
+        <div id="about-page" class="page-section">
+            <div class="container">
+                <div class="row justify-content-center">
+                    <div class="col-lg-10">
+                        <div class="card border-0 shadow-lg">
+                            <div class="card-body p-5">
+                                <div class="text-center mb-5">
+                                    <!-- Logo -->
+                                    <div class="mb-4">
+                                        <img src="assets/logo/main-logo.png" alt="Ocean-Friendly Logo" class="hero-logo" style="height: 100px;">
+                                    </div>
+                                    
+                                    <h2 class="display-4 fw-bold text-dark mb-4">
+                                        <i class="fas fa-water me-3" style="background: linear-gradient(135deg, var(--wave-blue), var(--seafoam)); background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent;"></i>
+                                        About Ocean-Friendly Product Finder
+                                    </h2>
+                                    <p class="lead text-muted fs-4">
+                                    Our mission is to help consumers make informed choices about personal care products 
+                                    that protect our oceans and marine ecosystems.
+                                </p>
+                                </div>
+                                
+                                <hr class="my-5">
+                                
+                                <div class="row mb-5">
+                                    <div class="col-md-6">
+                                        <div class="text-center">
+                                            <div class="ocean-score-badge score-safe mb-3" style="font-size: 1.1rem;">
+                                                <i class="fas fa-globe me-2"></i>UN SDG #14
+                                            </div>
+                                            <h4 class="fw-bold text-dark">Life Below Water</h4>
+                                            <p class="text-muted">
+                                    We support the United Nations' goal to conserve and sustainably use the oceans, 
+                                    seas and marine resources for sustainable development. Every product choice matters 
+                                    in protecting our coral reefs and marine life.
+                                </p>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="text-center">
+                                            <div class="ocean-score-badge score-moderate mb-3" style="font-size: 1.1rem;">
+                                                <i class="fas fa-chart-line me-2"></i>Ocean Score
+                                            </div>
+                                            <h4 class="fw-bold text-dark">Smart Rating System</h4>
+                                            <p class="text-muted">
+                                                Our proprietary Ocean Score (1-100) evaluates products based on scientific 
+                                                criteria to help you make environmentally conscious decisions.
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <hr class="my-5">
+                                
+                                <h4 class="fw-bold text-center mb-4">Ocean Score Breakdown</h4>
+                                <div class="row g-4 mb-5">
+                                    <div class="col-md-3 text-center">
+                                        <div class="card border-0 bg-light h-100">
+                                            <div class="card-body p-4">
+                                                <i class="fas fa-recycle fa-3x text-success mb-3"></i>
+                                                <h6 class="fw-bold">Biodegradability</h6>
+                                                <small class="text-muted">30% Weight</small>
+                                                <p class="small mt-2">How quickly ingredients break down naturally</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3 text-center">
+                                        <div class="card border-0 bg-light h-100">
+                                            <div class="card-body p-4">
+                                                <i class="fas fa-fish fa-3x text-info mb-3"></i>
+                                                <h6 class="fw-bold">Coral Safety</h6>
+                                                <small class="text-muted">30% Weight</small>
+                                                <p class="small mt-2">Impact on coral reef health</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3 text-center">
+                                        <div class="card border-0 bg-light h-100">
+                                            <div class="card-body p-4">
+                                                <i class="fas fa-water fa-3x text-primary mb-3"></i>
+                                                <h6 class="fw-bold">Fish Safety</h6>
+                                                <small class="text-muted">25% Weight</small>
+                                                <p class="small mt-2">Effect on marine fish and wildlife</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3 text-center">
+                                        <div class="card border-0 bg-light h-100">
+                                            <div class="card-body p-4">
+                                                <i class="fas fa-globe-americas fa-3x text-warning mb-3"></i>
+                                                <h6 class="fw-bold">Coverage</h6>
+                                                <small class="text-muted">15% Weight</small>
+                                                <p class="small mt-2">Overall environmental impact</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <hr class="my-5">
+                                
+                                <h4 class="fw-bold text-center mb-4">Safety Level Guide</h4>
+                                <div class="row g-4">
+                                    <div class="col-md-4 text-center">
+                                        <div class="ocean-score-badge score-safe mb-3" style="font-size: 1.2rem;">
+                                            <i class="fas fa-check-circle me-2"></i>Safe (80-100)
+                                        </div>
+                                        <p class="text-muted">Ocean-friendly products that are safe for marine environments</p>
+                                    </div>
+                                    <div class="col-md-4 text-center">
+                                        <div class="ocean-score-badge score-moderate mb-3" style="font-size: 1.2rem;">
+                                            <i class="fas fa-exclamation-circle me-2"></i>Moderate (50-79)
+                                        </div>
+                                        <p class="text-muted">Products with mixed environmental impact</p>
+                                    </div>
+                                    <div class="col-md-4 text-center">
+                                        <div class="ocean-score-badge score-harmful mb-3" style="font-size: 1.2rem;">
+                                            <i class="fas fa-times-circle me-2"></i>Harmful (1-49)
+                                        </div>
+                                        <p class="text-muted">Products that may harm marine life and coral reefs</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Admin Page -->
+        <div id="admin-page" class="page-section">
+            <div class="container">
+                <div class="text-center mb-5">
+                    <div class="mb-4">
+                        <img src="assets/logo/main-logo.png" alt="Ocean-Friendly Logo" class="logo-medium">
+                    </div>
+                    <h2 class="display-5 fw-bold text-white mb-3">
+                        <i class="fas fa-cogs me-3"></i>Admin Dashboard
+                    </h2>
+                    <p class="lead text-white-50">Manage products, users, and system settings</p>
+                </div>
+                
+                <!-- Admin Login -->
+                <div id="admin-login" class="admin-panel">
+                    <h4>Admin Login</h4>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="admin-username" class="form-label">Username</label>
+                                <input type="text" class="form-control" id="admin-username" value="admin">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="admin-password" class="form-label">Password</label>
+                                <input type="password" class="form-control" id="admin-password" value="admin123">
+                            </div>
+                        </div>
+                    </div>
+                    <button class="btn btn-ocean" onclick="adminLogin()">Login</button>
+                </div>
+
+                <!-- Admin Dashboard -->
+                <div id="admin-dashboard" class="admin-panel" style="display: none;">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="list-group">
+                                <a href="#" class="list-group-item list-group-item-action active" onclick="showAdminSection('products')">
+                                    <i class="fas fa-box"></i> Products
+                                </a>
+                                <a href="#" class="list-group-item list-group-item-action" onclick="showAdminSection('ingredients')">
+                                    <i class="fas fa-flask"></i> Ingredients
+                                </a>
+                                <a href="#" class="list-group-item list-group-item-action" onclick="showAdminSection('users')">
+                                    <i class="fas fa-users"></i> Users
+                                </a>
+                                <a href="#" class="list-group-item list-group-item-action" onclick="showAdminSection('analytics')">
+                                    <i class="fas fa-chart-bar"></i> Analytics
+                                </a>
+                                <a href="#" class="list-group-item list-group-item-action" onclick="showAdminSection('weights')">
+                                    <i class="fas fa-balance-scale"></i> Score Weights
+                                </a>
+                            </div>
+                        </div>
+                        <div class="col-md-9">
+                            <div id="admin-content">
+                                <!-- Admin content will be loaded here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Product Modal -->
+    <div class="modal fade" id="productModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="productModalTitle">Product Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="productModalBody">
+                    <!-- Product details will be loaded here -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-ocean" id="favoriteBtn" onclick="toggleFavorite()">
+                        <i class="fas fa-heart"></i> Add to Favorites
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
