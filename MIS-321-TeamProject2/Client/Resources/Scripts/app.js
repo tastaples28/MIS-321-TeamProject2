@@ -11,16 +11,7 @@ let totalPages = 1;
 // Initialize the application
 document.addEventListener('DOMContentLoaded', function() {
   console.log('Initializing application');
-  loadFavorites();
   showPage('home');
-  
-  // Make sure home navigation link is active
-  setTimeout(() => {
-    const homeLink = document.querySelector('[onclick="showPage(\'home\')"]');
-    if (homeLink && !homeLink.classList.contains('active')) {
-      homeLink.classList.add('active');
-    }
-  }, 100);
 });
 
 // Navigation functions
@@ -57,12 +48,6 @@ function showPage(pageName) {
   
   // Load page-specific data
   switch(pageName) {
-    case 'products':
-      searchProducts();
-      break;
-    case 'favorites':
-      loadFavorites();
-      break;
     case 'admin':
       // Admin page will handle its own loading
       break;

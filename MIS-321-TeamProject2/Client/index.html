@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🌊 Ocean-Friendly Product Finder</title>
+    <title>🌊 Reef Rates</title>
     <link rel="icon" type="image/png" href="assets/logo/main-logo.png">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
@@ -13,8 +13,8 @@
     <!-- Navigation -->
     <nav class="navbar navbar-expand-lg navbar-light fixed-top">
         <div class="container">
-            <a class="navbar-brand" href="#" onclick="showPage('home')">
-                <span>Ocean-Friendly Product Finder</span>
+            <a class="navbar-brand" href="index.html">
+                <span>Reef Rates</span>
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
@@ -22,13 +22,7 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item">
-                        <a class="nav-link" href="#" onclick="showPage('home')">Home</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#" onclick="showPage('products')">Products</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#" onclick="showPage('favorites')">Favorites</a>
+                        <a class="nav-link" href="login.html">Login</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="#" onclick="showPage('about')">About</a>
@@ -45,7 +39,7 @@
     <div id="app" class="container-fluid" style="margin-top: 80px;">
         <!-- Watermark Logo -->
         <div class="logo-watermark" style="top: 50%; left: 50%; transform: translate(-50%, -50%); width: 300px; height: 300px;">
-            <img src="assets/logo/main-logo.png" alt="Ocean-Friendly Logo" style="width: 100%; height: 100%; opacity: 0.05;">
+            <img src="assets/logo/main-logo.png" alt="Reef Rates Logo" style="width: 100%; height: 100%; opacity: 0.05;">
         </div>
         
         <!-- Home Page -->
@@ -55,71 +49,24 @@
                     <div class="row align-items-center">
                         <div class="col-lg-6">
                             <h1 class="display-3 fw-bold mb-4 text-white">
-                                <i class="fas fa-water me-3"></i>Ocean-Friendly Product Finder
+                                <i class="fas fa-water me-3"></i>Reef Rates
                             </h1>
                             <p class="lead mb-4 text-white-50 fs-4">Discover products that protect our oceans and marine life</p>
                         </div>
                         <div class="col-lg-6 text-center">
                             <!-- Logo -->
                             <div class="mb-4">
-                                <img src="assets/logo/main-logo.png" alt="Ocean-Friendly Logo" class="hero-logo" style="height: 400px;">
+                                <img src="assets/logo/main-logo.png" alt="Reef Rates Logo" class="hero-logo" style="height: 400px;">
                             </div>
                         </div>
                     </div>
                     
                     <div class="row justify-content-center mt-5">
                         <div class="col-lg-8 text-center">
-                            
-                            <!-- Enhanced search with floating labels -->
-                    <div class="row justify-content-center">
-                        <div class="col-md-8">
-                                    <div class="input-group input-group-lg shadow-lg">
-                                        <span class="input-group-text bg-white border-0 rounded-start-4">
-                                            <i class="fas fa-search text-primary"></i>
-                                        </span>
-                                        <input type="text" class="form-control border-0 rounded-end-4" id="home-search" 
-                                               placeholder="Search for ocean-friendly products..." 
-                                               style="font-size: 1.3rem; padding: 20px;">
-                                        <button class="btn btn-ocean ms-2" type="button" onclick="searchFromHome()">
-                                            <i class="fas fa-search me-2"></i>Search
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <!-- Floating badges -->
-                            <div class="row mt-5">
-                                <div class="col-md-4">
-                                    <div class="card border-0 bg-transparent text-white">
-                                        <div class="card-body text-center">
-                                            <div class="ocean-score-badge score-safe mb-3">
-                                                <i class="fas fa-shield-alt me-2"></i>Ocean Safe
-                                            </div>
-                                            <h6>Reef-Friendly</h6>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-md-4">
-                                    <div class="card border-0 bg-transparent text-white">
-                                        <div class="card-body text-center">
-                                            <div class="ocean-score-badge score-moderate mb-3">
-                                                <i class="fas fa-balance-scale me-2"></i>Moderate Impact
-                                            </div>
-                                            <h6>Mixed Ingredients</h6>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-md-4">
-                                    <div class="card border-0 bg-transparent text-white">
-                                        <div class="card-body text-center">
-                                            <div class="ocean-score-badge score-harmful mb-3">
-                                                <i class="fas fa-exclamation-triangle me-2"></i>Harmful
-                                            </div>
-                                            <h6>Avoid Near Reefs</h6>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+                            <!-- Start Journey Button -->
+                            <a href="login.html" class="btn btn-ocean btn-lg px-5 py-3" style="font-size: 1.5rem; border-radius: 50px; box-shadow: 0 8px 30px rgba(14, 165, 233, 0.4);">
+                                <i class="fas fa-water me-3"></i>Start your Reef-Safe Journey Now
+                            </a>
                         </div>
                     </div>
                 </div>
@@ -131,7 +78,7 @@
                         <div class="card text-center h-100 border-0 shadow-lg">
                             <div class="card-body p-4">
                                 <div class="mb-4">
-                                    <img src="assets/logo/main-logo.png" alt="Ocean-Friendly Logo" class="logo-card">
+                                    <img src="assets/logo/main-logo.png" alt="Reef Rates Logo" class="logo-card">
                                 </div>
                                 <h5 class="card-title fw-bold text-dark">Ocean Score System</h5>
                                 <p class="card-text text-muted">Products rated 1-100 based on biodegradability, coral safety, fish safety, and environmental impact.</p>
@@ -145,7 +92,7 @@
                         <div class="card text-center h-100 border-0 shadow-lg">
                             <div class="card-body p-4">
                                 <div class="mb-4">
-                                    <img src="assets/logo/main-logo.png" alt="Ocean-Friendly Logo" class="logo-card">
+                                    <img src="assets/logo/main-logo.png" alt="Reef Rates Logo" class="logo-card">
                                 </div>
                                 <h5 class="card-title fw-bold text-dark">Smart Search</h5>
                                 <p class="card-text text-muted">Find products by name, brand, category, or ingredients with advanced filtering options.</p>
@@ -159,7 +106,7 @@
                         <div class="card text-center h-100 border-0 shadow-lg">
                             <div class="card-body p-4">
                                 <div class="mb-4">
-                                    <img src="assets/logo/main-logo.png" alt="Ocean-Friendly Logo" class="logo-card">
+                                    <img src="assets/logo/main-logo.png" alt="Reef Rates Logo" class="logo-card">
                                 </div>
                                 <h5 class="card-title fw-bold text-dark">Save Favorites</h5>
                                 <p class="card-text text-muted">Create your personal collection of ocean-friendly products and track your eco-friendly choices.</p>
@@ -173,93 +120,6 @@
             </div>
         </div>
 
-        <!-- Products Page -->
-        <div id="products-page" class="page-section">
-            <div class="container">
-                <div class="text-center mb-5">
-                    <div class="mb-4">
-                        <img src="assets/logo/main-logo.png" alt="Ocean-Friendly Logo" class="logo-medium">
-                    </div>
-                    <h2 class="display-5 fw-bold text-white mb-3">
-                        <i class="fas fa-search me-3"></i>Product Search
-                    </h2>
-                    <p class="lead text-white-50">Find the perfect ocean-friendly products for your needs</p>
-                </div>
-                
-                <!-- Search Filters -->
-                <div class="filter-section">
-                    <div class="row">
-                        <div class="col-md-4 mb-3">
-                            <label for="search-term" class="form-label">Search Term</label>
-                            <input type="text" class="form-control" id="search-term" placeholder="Product name, brand, or category">
-                        </div>
-                        <div class="col-md-2 mb-3">
-                            <label for="category-filter" class="form-label">Category</label>
-                            <select class="form-select" id="category-filter">
-                                <option value="">All Categories</option>
-                                <option value="Sunscreen">Sunscreen</option>
-                                <option value="Shampoo">Shampoo</option>
-                                <option value="Body Wash">Body Wash</option>
-                                <option value="Face Wash">Face Wash</option>
-                                <option value="Toothpaste">Toothpaste</option>
-                            </select>
-                        </div>
-                        <div class="col-md-2 mb-3">
-                            <label for="min-score" class="form-label">Min Ocean Score</label>
-                            <input type="number" class="form-control" id="min-score" min="1" max="100" placeholder="1">
-                        </div>
-                        <div class="col-md-2 mb-3">
-                            <label for="max-score" class="form-label">Max Ocean Score</label>
-                            <input type="number" class="form-control" id="max-score" min="1" max="100" placeholder="100">
-                        </div>
-                        <div class="col-md-2 mb-3">
-                            <label class="form-label">&nbsp;</label>
-                            <button class="btn btn-ocean w-100" onclick="searchProducts()">
-                                <i class="fas fa-search"></i> Search
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Loading Spinner -->
-                <div id="loading-spinner" class="loading-spinner">
-                    <div class="spinner-border text-primary" role="status">
-                        <span class="visually-hidden">Loading...</span>
-                    </div>
-                    <p class="mt-2">Searching for ocean-friendly products...</p>
-                </div>
-
-                <!-- Products Grid -->
-                <div id="products-grid" class="row">
-                    <!-- Products will be dynamically loaded here -->
-                </div>
-
-                <!-- Pagination -->
-                <nav aria-label="Products pagination" class="mt-4">
-                    <ul id="pagination" class="pagination justify-content-center">
-                        <!-- Pagination will be dynamically generated -->
-                    </ul>
-                </nav>
-            </div>
-        </div>
-
-        <!-- Favorites Page -->
-        <div id="favorites-page" class="page-section">
-            <div class="container">
-                <div class="text-center mb-5">
-                    <div class="mb-4">
-                        <img src="assets/logo/main-logo.png" alt="Ocean-Friendly Logo" class="logo-medium">
-                    </div>
-                    <h2 class="display-5 fw-bold text-white mb-3">
-                        <i class="fas fa-heart me-3"></i>My Favorites
-                    </h2>
-                    <p class="lead text-white-50">Your personal collection of ocean-friendly products</p>
-                </div>
-                <div id="favorites-grid" class="row">
-                    <!-- Favorites will be dynamically loaded here -->
-                </div>
-            </div>
-        </div>
 
         <!-- About Page -->
         <div id="about-page" class="page-section">
@@ -271,12 +131,12 @@
                                 <div class="text-center mb-5">
                                     <!-- Logo -->
                                     <div class="mb-4">
-                                        <img src="assets/logo/main-logo.png" alt="Ocean-Friendly Logo" class="hero-logo" style="height: 100px;">
+                                        <img src="assets/logo/main-logo.png" alt="Reef Rates Logo" class="hero-logo" style="height: 100px;">
                                     </div>
                                     
                                     <h2 class="display-4 fw-bold text-dark mb-4">
                                         <i class="fas fa-water me-3" style="background: linear-gradient(135deg, var(--wave-blue), var(--seafoam)); background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent;"></i>
-                                        About Ocean-Friendly Product Finder
+                                        About Reef Rates
                                     </h2>
                                     <p class="lead text-muted fs-4">
                                     Our mission is to help consumers make informed choices about personal care products 
@@ -395,7 +255,7 @@
             <div class="container">
                 <div class="text-center mb-5">
                     <div class="mb-4">
-                        <img src="assets/logo/main-logo.png" alt="Ocean-Friendly Logo" class="logo-medium">
+                        <img src="assets/logo/main-logo.png" alt="Reef Rates Logo" class="logo-medium">
                     </div>
                     <h2 class="display-5 fw-bold text-white mb-3">
                         <i class="fas fa-cogs me-3"></i>Admin Dashboard
@@ -456,26 +316,6 @@
         </div>
     </div>
 
-    <!-- Product Modal -->
-    <div class="modal fade" id="productModal" tabindex="-1">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="productModalTitle">Product Details</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body" id="productModalBody">
-                    <!-- Product details will be loaded here -->
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    <button type="button" class="btn btn-ocean" id="favoriteBtn" onclick="toggleFavorite()">
-                        <i class="fas fa-heart"></i> Add to Favorites
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="Resources/Scripts/app.js"></script>
