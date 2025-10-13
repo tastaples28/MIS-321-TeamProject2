@@ -1073,3 +1073,4 @@ async function deleteIngredient(id) {
     showError('Failed to delete ingredient.');
   }
 }
+
