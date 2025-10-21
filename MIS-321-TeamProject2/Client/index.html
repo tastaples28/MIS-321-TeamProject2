@@ -22,7 +22,18 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item">
-                        <a class="nav-link" href="login.html">Login</a>
+                        <div class="user-info" style="display: none;">
+                            <span class="navbar-text me-3"></span>
+                        </div>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link login-button" href="login.html">Login</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link login-button" href="signup.html">Sign Up</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link logout-button" style="display: none;" href="#" onclick="handleLogout()">Logout</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="#" onclick="showPage('about')">About</a>
@@ -64,7 +75,7 @@
                     <div class="row justify-content-center mt-5">
                         <div class="col-lg-8 text-center">
                             <!-- Start Journey Button -->
-                            <a href="login.html" class="btn btn-ocean btn-lg px-5 py-3" style="font-size: 1.5rem; border-radius: 50px; box-shadow: 0 8px 30px rgba(14, 165, 233, 0.4);">
+                            <a href="#" id="startJourneyBtn" class="btn btn-ocean btn-lg px-5 py-3" style="font-size: 1.5rem; border-radius: 50px; box-shadow: 0 8px 30px rgba(14, 165, 233, 0.4);" onclick="handleStartJourney()">
                                 <i class="fas fa-water me-3"></i>Start your Reef-Safe Journey Now
                             </a>
                         </div>
@@ -254,6 +265,24 @@
 
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="Resources/Scripts/user-auth.js"></script>
     <script src="Resources/Scripts/app.js"></script>
+    <script>
+        // Handle start journey button click
+        function handleStartJourney() {
+            if (isUserLoggedIn()) {
+                // User is logged in, go to lookup page
+                window.location.href = 'lookup.html';
+            } else {
+                // User not logged in, go to login page
+                window.location.href = 'login.html';
+            }
+        }
+        
+        // Update UI when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            updateUIForLoggedInUser();
+        });
+    </script>
 </body>
 </html>

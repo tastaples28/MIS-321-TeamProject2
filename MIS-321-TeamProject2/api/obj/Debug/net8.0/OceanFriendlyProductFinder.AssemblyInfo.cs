@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("OceanFriendlyProductFinder")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+a66312279525a1e58f38f84d795936b7847e3733")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+fcc84526a5033ee546420680f4913194633981d6")]
 [assembly: System.Reflection.AssemblyProductAttribute("OceanFriendlyProductFinder")]
 [assembly: System.Reflection.AssemblyTitleAttribute("OceanFriendlyProductFinder")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

@@ -1,5 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Data.Sqlite;
+using MySql.Data.MySqlClient;
 using OceanFriendlyProductFinder.Models;
 using OceanFriendlyProductFinder.Services;
 
@@ -22,14 +22,14 @@ namespace OceanFriendlyProductFinder.Controllers
         public async Task<ActionResult<List<User>>> GetUsers()
         {
             using var connection = _databaseService.GetConnection();
-            await connection.OpenAsync();
+            connection.Open();
 
             var query = @"
                 SELECT Id, Username, Email, SensitivityPreferences, IsAdmin, CreatedAt
                 FROM Users
                 ORDER BY CreatedAt DESC";
 
-            using var cmd = new SqliteCommand(query, connection);
+            using var cmd = new MySqlCommand(query, (MySqlConnection)connection);
             var users = new List<User>();
 
             using var reader = await cmd.ExecuteReaderAsync();
@@ -37,12 +37,12 @@ namespace OceanFriendlyProductFinder.Controllers
             {
                 users.Add(new User
                 {
-                    Id = reader.GetInt32("Id"),
-                    Username = reader.GetString("Username"),
-                    Email = reader.GetString("Email"),
-                    SensitivityPreferences = reader.IsDBNull("SensitivityPreferences") ? null : reader.GetString("SensitivityPreferences"),
-                    IsAdmin = reader.GetBoolean("IsAdmin"),
-                    CreatedAt = reader.GetDateTime("CreatedAt")
+                    Id = reader.GetInt32(reader.GetOrdinal("Id")),
+                    Username = reader.GetString(reader.GetOrdinal("Username")),
+                    Email = reader.GetString(reader.GetOrdinal("Email")),
+                    SensitivityPreferences = reader.IsDBNull(reader.GetOrdinal("SensitivityPreferences")) ? null : reader.GetString(reader.GetOrdinal("SensitivityPreferences")),
+                    IsAdmin = reader.GetBoolean(reader.GetOrdinal("IsAdmin")),
+                    CreatedAt = reader.GetDateTime(reader.GetOrdinal("CreatedAt"))
                 });
             }
 
@@ -53,23 +53,23 @@ namespace OceanFriendlyProductFinder.Controllers
         public async Task<ActionResult<User>> CreateUser([FromBody] UserCreateRequest request)
         {
             using var connection = _databaseService.GetConnection();
-            await connection.OpenAsync();
+            connection.Open();
 
             var query = @"
                 INSERT INTO Users (Username, Email, PasswordHash, SensitivityPreferences, IsAdmin)
-                VALUES (@username, @email, @passwordHash, @sensitivityPreferences, @isAdmin)
-                RETURNING Id";
+                VALUES (@username, @email, @passwordHash, @sensitivityPreferences, @isAdmin)";
 
-            using var cmd = new SqliteCommand(query, connection);
+            using var cmd = new MySqlCommand(query, (MySqlConnection)connection);
             cmd.Parameters.AddWithValue("@username", request.Username);
             cmd.Parameters.AddWithValue("@email", request.Email);
             cmd.Parameters.AddWithValue("@passwordHash", BCrypt.Net.BCrypt.HashPassword(request.Password));
             cmd.Parameters.AddWithValue("@sensitivityPreferences", request.SensitivityPreferences ?? (object)DBNull.Value);
             cmd.Parameters.AddWithValue("@isAdmin", false);
 
-            try
-            {
-                var userId = Convert.ToInt32(await cmd.ExecuteScalarAsync());
+             try
+             {
+                 await cmd.ExecuteNonQueryAsync();
+                 var userId = Convert.ToInt32(cmd.LastInsertedId);
                 
                 // Return user without password hash
                 var getUserQuery = @"
@@ -77,7 +77,7 @@ namespace OceanFriendlyProductFinder.Controllers
                     FROM Users
                     WHERE Id = @id";
 
-                using var getUserCmd = new SqliteCommand(getUserQuery, connection);
+                using var getUserCmd = new MySqlCommand(getUserQuery, (MySqlConnection)connection);
                 getUserCmd.Parameters.AddWithValue("@id", userId);
 
                 using var reader = await getUserCmd.ExecuteReaderAsync();
@@ -85,12 +85,12 @@ namespace OceanFriendlyProductFinder.Controllers
                 {
                     var user = new User
                     {
-                        Id = reader.GetInt32("Id"),
-                        Username = reader.GetString("Username"),
-                        Email = reader.GetString("Email"),
-                        SensitivityPreferences = reader.IsDBNull("SensitivityPreferences") ? null : reader.GetString("SensitivityPreferences"),
-                        IsAdmin = reader.GetBoolean("IsAdmin"),
-                        CreatedAt = reader.GetDateTime("CreatedAt")
+                        Id = reader.GetInt32(reader.GetOrdinal("Id")),
+                        Username = reader.GetString(reader.GetOrdinal("Username")),
+                        Email = reader.GetString(reader.GetOrdinal("Email")),
+                        SensitivityPreferences = reader.IsDBNull(reader.GetOrdinal("SensitivityPreferences")) ? null : reader.GetString(reader.GetOrdinal("SensitivityPreferences")),
+                        IsAdmin = reader.GetBoolean(reader.GetOrdinal("IsAdmin")),
+                        CreatedAt = reader.GetDateTime(reader.GetOrdinal("CreatedAt"))
                     };
 
                     return CreatedAtAction(nameof(GetUsers), new { id = userId }, user);
@@ -98,7 +98,7 @@ namespace OceanFriendlyProductFinder.Controllers
 
                 return BadRequest("Failed to retrieve created user");
             }
-            catch (SqliteException ex) when (ex.SqliteErrorCode == 19) // UNIQUE constraint failed
+            catch (MySqlException ex) when (ex.Number == 1062) // UNIQUE constraint failed
             {
                 return Conflict("Username or email already exists");
             }
@@ -108,14 +108,14 @@ namespace OceanFriendlyProductFinder.Controllers
         public async Task<ActionResult<User>> UpdateUser(int id, [FromBody] UserCreateRequest request)
         {
             using var connection = _databaseService.GetConnection();
-            await connection.OpenAsync();
+            connection.Open();
 
             var query = @"
                 UPDATE Users 
                 SET Username = @username, Email = @email, SensitivityPreferences = @sensitivityPreferences
                 WHERE Id = @id";
 
-            using var cmd = new SqliteCommand(query, connection);
+            using var cmd = new MySqlCommand(query, (MySqlConnection)connection);
             cmd.Parameters.AddWithValue("@id", id);
             cmd.Parameters.AddWithValue("@username", request.Username);
             cmd.Parameters.AddWithValue("@email", request.Email);
@@ -135,7 +135,7 @@ namespace OceanFriendlyProductFinder.Controllers
                     FROM Users
                     WHERE Id = @id";
 
-                using var getUserCmd = new SqliteCommand(getUserQuery, connection);
+                using var getUserCmd = new MySqlCommand(getUserQuery, (MySqlConnection)connection);
                 getUserCmd.Parameters.AddWithValue("@id", id);
 
                 using var reader = await getUserCmd.ExecuteReaderAsync();
@@ -143,12 +143,12 @@ namespace OceanFriendlyProductFinder.Controllers
                 {
                     var user = new User
                     {
-                        Id = reader.GetInt32("Id"),
-                        Username = reader.GetString("Username"),
-                        Email = reader.GetString("Email"),
-                        SensitivityPreferences = reader.IsDBNull("SensitivityPreferences") ? null : reader.GetString("SensitivityPreferences"),
-                        IsAdmin = reader.GetBoolean("IsAdmin"),
-                        CreatedAt = reader.GetDateTime("CreatedAt")
+                        Id = reader.GetInt32(reader.GetOrdinal("Id")),
+                        Username = reader.GetString(reader.GetOrdinal("Username")),
+                        Email = reader.GetString(reader.GetOrdinal("Email")),
+                        SensitivityPreferences = reader.IsDBNull(reader.GetOrdinal("SensitivityPreferences")) ? null : reader.GetString(reader.GetOrdinal("SensitivityPreferences")),
+                        IsAdmin = reader.GetBoolean(reader.GetOrdinal("IsAdmin")),
+                        CreatedAt = reader.GetDateTime(reader.GetOrdinal("CreatedAt"))
                     };
 
                     return Ok(user);
@@ -156,7 +156,7 @@ namespace OceanFriendlyProductFinder.Controllers
 
                 return BadRequest("Failed to retrieve updated user");
             }
-            catch (SqliteException ex) when (ex.SqliteErrorCode == 19) // UNIQUE constraint failed
+            catch (MySqlException ex) when (ex.Number == 1062) // UNIQUE constraint failed
             {
                 return Conflict("Username or email already exists");
             }
@@ -166,10 +166,10 @@ namespace OceanFriendlyProductFinder.Controllers
         public async Task<ActionResult> DeleteUser(int id)
         {
             using var connection = _databaseService.GetConnection();
-            await connection.OpenAsync();
+            connection.Open();
 
             var query = "DELETE FROM Users WHERE Id = @id AND IsAdmin = 0"; // Prevent deleting admin users
-            using var cmd = new SqliteCommand(query, connection);
+            using var cmd = new MySqlCommand(query, (MySqlConnection)connection);
             cmd.Parameters.AddWithValue("@id", id);
 
             var rowsAffected = await cmd.ExecuteNonQueryAsync();
@@ -209,17 +209,17 @@ namespace OceanFriendlyProductFinder.Controllers
             try
             {
                 using var connection = _databaseService.GetConnection();
-                await connection.OpenAsync();
+                connection.Open();
 
                 // Get all product IDs
                 var productQuery = "SELECT Id FROM Products";
-                using var productCmd = new SqliteCommand(productQuery, connection);
+                using var productCmd = new MySqlCommand(productQuery, (MySqlConnection)connection);
                 using var productReader = await productCmd.ExecuteReaderAsync();
 
                 var productIds = new List<int>();
                 while (await productReader.ReadAsync())
                 {
-                    productIds.Add(productReader.GetInt32("Id"));
+                    productIds.Add(productReader.GetInt32(productReader.GetOrdinal("Id")));
                 }
 
                 // Recalculate scores for each product
@@ -237,7 +237,7 @@ namespace OceanFriendlyProductFinder.Controllers
                             UpdatedAt = CURRENT_TIMESTAMP
                         WHERE Id = @productId";
 
-                    using var updateCmd = new SqliteCommand(updateQuery, connection);
+                    using var updateCmd = new MySqlCommand(updateQuery, (MySqlConnection)connection);
                     updateCmd.Parameters.AddWithValue("@oceanScore", breakdown.TotalScore);
                     updateCmd.Parameters.AddWithValue("@bioScore", breakdown.BiodegradabilityScore);
                     updateCmd.Parameters.AddWithValue("@coralScore", breakdown.CoralSafetyScore);
@@ -253,6 +253,55 @@ namespace OceanFriendlyProductFinder.Controllers
             catch (Exception ex)
             {
                 return BadRequest($"Error recalculating scores: {ex.Message}");
+            }
+        }
+
+        [HttpPost("clear-database")]
+        public async Task<ActionResult> ClearDatabase()
+        {
+            try
+            {
+                using var connection = _databaseService.GetConnection();
+                connection.Open();
+
+                // Disable foreign key checks
+                using var disableFK = new MySqlCommand("SET FOREIGN_KEY_CHECKS = 0", (MySqlConnection)connection);
+                await disableFK.ExecuteNonQueryAsync();
+
+                // Clear all tables
+                var tables = new[] { "AnalyticsLog", "UserFavorites", "ProductIngredients", "Products", "Ingredients", "Users", "OceanScoreWeights" };
+                
+                foreach (var table in tables)
+                {
+                    using var truncateCmd = new MySqlCommand($"TRUNCATE TABLE {table}", (MySqlConnection)connection);
+                    await truncateCmd.ExecuteNonQueryAsync();
+                }
+
+                // Re-enable foreign key checks
+                using var enableFK = new MySqlCommand("SET FOREIGN_KEY_CHECKS = 1", (MySqlConnection)connection);
+                await enableFK.ExecuteNonQueryAsync();
+
+                // Insert default admin user
+                using var insertAdmin = new MySqlCommand(@"
+                    INSERT INTO Users (Username, Email, PasswordHash, IsAdmin)
+                    VALUES ('admin', 'admin@oceanfriendly.com', 'admin123', 1)", (MySqlConnection)connection);
+                await insertAdmin.ExecuteNonQueryAsync();
+
+                // Insert default Ocean Score weights
+                using var insertWeights = new MySqlCommand(@"
+                    INSERT INTO OceanScoreWeights (BiodegradabilityWeight, CoralSafetyWeight, FishSafetyWeight, CoverageWeight)
+                    VALUES (0.30, 0.30, 0.25, 0.15)", (MySqlConnection)connection);
+                await insertWeights.ExecuteNonQueryAsync();
+
+                return Ok(new { 
+                    message = "Database cleared successfully!",
+                    details = "All data has been removed. Default admin user and Ocean Score weights have been restored.",
+                    adminUser = "admin / admin123"
+                });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest($"Error clearing database: {ex.Message}");
             }
         }
     }

@@ -1,5 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Data.Sqlite;
+using MySql.Data.MySqlClient;
 using OceanFriendlyProductFinder.Models;
 using OceanFriendlyProductFinder.Services;
 
@@ -20,7 +20,7 @@ namespace OceanFriendlyProductFinder.Controllers
         public async Task<ActionResult<List<Ingredient>>> GetIngredients()
         {
             using var connection = _databaseService.GetConnection();
-            await connection.OpenAsync();
+            connection.Open();
 
             var query = @"
                 SELECT Id, Name, IsReefSafe, BiodegradabilityScore, CoralSafetyScore, 
@@ -28,7 +28,7 @@ namespace OceanFriendlyProductFinder.Controllers
                 FROM Ingredients
                 ORDER BY Name";
 
-            using var cmd = new SqliteCommand(query, connection);
+            using var cmd = new MySqlCommand(query, (MySqlConnection)connection);
             var ingredients = new List<Ingredient>();
 
             using var reader = await cmd.ExecuteReaderAsync();
@@ -36,15 +36,15 @@ namespace OceanFriendlyProductFinder.Controllers
             {
                 ingredients.Add(new Ingredient
                 {
-                    Id = reader.GetInt32("Id"),
-                    Name = reader.GetString("Name"),
-                    IsReefSafe = reader.GetBoolean("IsReefSafe"),
-                    BiodegradabilityScore = reader.GetInt32("BiodegradabilityScore"),
-                    CoralSafetyScore = reader.GetInt32("CoralSafetyScore"),
-                    FishSafetyScore = reader.GetInt32("FishSafetyScore"),
-                    CoverageScore = reader.GetInt32("CoverageScore"),
-                    Description = reader.IsDBNull("Description") ? null : reader.GetString("Description"),
-                    CreatedAt = reader.GetDateTime("CreatedAt")
+                    Id = reader.GetInt32(reader.GetOrdinal("Id")),
+                    Name = reader.GetString(reader.GetOrdinal("Name")),
+                    IsReefSafe = reader.GetBoolean(reader.GetOrdinal("IsReefSafe")),
+                    BiodegradabilityScore = reader.GetInt32(reader.GetOrdinal("BiodegradabilityScore")),
+                    CoralSafetyScore = reader.GetInt32(reader.GetOrdinal("CoralSafetyScore")),
+                    FishSafetyScore = reader.GetInt32(reader.GetOrdinal("FishSafetyScore")),
+                    CoverageScore = reader.GetInt32(reader.GetOrdinal("CoverageScore")),
+                    Description = reader.IsDBNull(reader.GetOrdinal("Description")) ? null : reader.GetString(reader.GetOrdinal("Description")),
+                    CreatedAt = reader.GetDateTime(reader.GetOrdinal("CreatedAt"))
                 });
             }
 
@@ -55,7 +55,7 @@ namespace OceanFriendlyProductFinder.Controllers
         public async Task<ActionResult<Ingredient>> GetIngredient(int id)
         {
             using var connection = _databaseService.GetConnection();
-            await connection.OpenAsync();
+            connection.Open();
 
             var query = @"
                 SELECT Id, Name, IsReefSafe, BiodegradabilityScore, CoralSafetyScore, 
@@ -63,7 +63,7 @@ namespace OceanFriendlyProductFinder.Controllers
                 FROM Ingredients
                 WHERE Id = @id";
 
-            using var cmd = new SqliteCommand(query, connection);
+            using var cmd = new MySqlCommand(query, (MySqlConnection)connection);
             cmd.Parameters.AddWithValue("@id", id);
 
             using var reader = await cmd.ExecuteReaderAsync();
@@ -74,15 +74,15 @@ namespace OceanFriendlyProductFinder.Controllers
 
             var ingredient = new Ingredient
             {
-                Id = reader.GetInt32("Id"),
-                Name = reader.GetString("Name"),
-                IsReefSafe = reader.GetBoolean("IsReefSafe"),
-                BiodegradabilityScore = reader.GetInt32("BiodegradabilityScore"),
-                CoralSafetyScore = reader.GetInt32("CoralSafetyScore"),
-                FishSafetyScore = reader.GetInt32("FishSafetyScore"),
-                CoverageScore = reader.GetInt32("CoverageScore"),
-                Description = reader.IsDBNull("Description") ? null : reader.GetString("Description"),
-                CreatedAt = reader.GetDateTime("CreatedAt")
+                Id = reader.GetInt32(reader.GetOrdinal("Id")),
+                Name = reader.GetString(reader.GetOrdinal("Name")),
+                IsReefSafe = reader.GetBoolean(reader.GetOrdinal("IsReefSafe")),
+                BiodegradabilityScore = reader.GetInt32(reader.GetOrdinal("BiodegradabilityScore")),
+                CoralSafetyScore = reader.GetInt32(reader.GetOrdinal("CoralSafetyScore")),
+                FishSafetyScore = reader.GetInt32(reader.GetOrdinal("FishSafetyScore")),
+                CoverageScore = reader.GetInt32(reader.GetOrdinal("CoverageScore")),
+                Description = reader.IsDBNull(reader.GetOrdinal("Description")) ? null : reader.GetString(reader.GetOrdinal("Description")),
+                CreatedAt = reader.GetDateTime(reader.GetOrdinal("CreatedAt"))
             };
 
             return Ok(ingredient);
@@ -92,15 +92,14 @@ namespace OceanFriendlyProductFinder.Controllers
         public async Task<ActionResult<Ingredient>> CreateIngredient([FromBody] IngredientCreateRequest request)
         {
             using var connection = _databaseService.GetConnection();
-            await connection.OpenAsync();
+            connection.Open();
 
-            var query = @"
-                INSERT INTO Ingredients (Name, IsReefSafe, BiodegradabilityScore, CoralSafetyScore, 
-                                       FishSafetyScore, CoverageScore, Description)
-                VALUES (@name, @isReefSafe, @bioScore, @coralScore, @fishScore, @coverageScore, @description)
-                RETURNING Id";
+             var query = @"
+                 INSERT INTO Ingredients (Name, IsReefSafe, BiodegradabilityScore, CoralSafetyScore, 
+                                        FishSafetyScore, CoverageScore, Description)
+                 VALUES (@name, @isReefSafe, @bioScore, @coralScore, @fishScore, @coverageScore, @description) RETURNING Id";
 
-            using var cmd = new SqliteCommand(query, connection);
+            using var cmd = new MySqlCommand(query, (MySqlConnection)connection);
             cmd.Parameters.AddWithValue("@name", request.Name);
             cmd.Parameters.AddWithValue("@isReefSafe", request.IsReefSafe);
             cmd.Parameters.AddWithValue("@bioScore", request.BiodegradabilityScore);
@@ -109,13 +108,13 @@ namespace OceanFriendlyProductFinder.Controllers
             cmd.Parameters.AddWithValue("@coverageScore", request.CoverageScore);
             cmd.Parameters.AddWithValue("@description", request.Description ?? (object)DBNull.Value);
 
-            try
-            {
-                var ingredientId = Convert.ToInt32(await cmd.ExecuteScalarAsync());
-                var ingredient = await GetIngredient(ingredientId);
-                return CreatedAtAction(nameof(GetIngredient), new { id = ingredientId }, ingredient.Value);
-            }
-            catch (SqliteException ex) when (ex.SqliteErrorCode == 19) // UNIQUE constraint failed
+             try
+             {
+                 var ingredientId = Convert.ToInt32(await cmd.ExecuteScalarAsync());
+                 var ingredient = await GetIngredient(ingredientId);
+                 return CreatedAtAction(nameof(GetIngredient), new { id = ingredientId }, ingredient.Value);
+             }
+            catch (MySqlException ex) when (ex.Number == 1062) // UNIQUE constraint failed
             {
                 return Conflict("Ingredient with this name already exists");
             }
@@ -125,7 +124,7 @@ namespace OceanFriendlyProductFinder.Controllers
         public async Task<ActionResult<Ingredient>> UpdateIngredient(int id, [FromBody] IngredientCreateRequest request)
         {
             using var connection = _databaseService.GetConnection();
-            await connection.OpenAsync();
+            connection.Open();
 
             var query = @"
                 UPDATE Ingredients 
@@ -134,7 +133,7 @@ namespace OceanFriendlyProductFinder.Controllers
                     CoverageScore = @coverageScore, Description = @description
                 WHERE Id = @id";
 
-            using var cmd = new SqliteCommand(query, connection);
+            using var cmd = new MySqlCommand(query, (MySqlConnection)connection);
             cmd.Parameters.AddWithValue("@id", id);
             cmd.Parameters.AddWithValue("@name", request.Name);
             cmd.Parameters.AddWithValue("@isReefSafe", request.IsReefSafe);
@@ -155,7 +154,7 @@ namespace OceanFriendlyProductFinder.Controllers
                 var ingredient = await GetIngredient(id);
                 return Ok(ingredient.Value);
             }
-            catch (SqliteException ex) when (ex.SqliteErrorCode == 19) // UNIQUE constraint failed
+            catch (MySqlException ex) when (ex.Number == 1062) // UNIQUE constraint failed
             {
                 return Conflict("Ingredient with this name already exists");
             }
@@ -165,10 +164,10 @@ namespace OceanFriendlyProductFinder.Controllers
         public async Task<ActionResult> DeleteIngredient(int id)
         {
             using var connection = _databaseService.GetConnection();
-            await connection.OpenAsync();
+            connection.Open();
 
             var query = "DELETE FROM Ingredients WHERE Id = @id";
-            using var cmd = new SqliteCommand(query, connection);
+            using var cmd = new MySqlCommand(query, (MySqlConnection)connection);
             cmd.Parameters.AddWithValue("@id", id);
 
             var rowsAffected = await cmd.ExecuteNonQueryAsync();

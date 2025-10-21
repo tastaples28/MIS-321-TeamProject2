@@ -1,5 +1,6 @@
-using Microsoft.Data.Sqlite;
+using MySql.Data.MySqlClient;
 using OceanFriendlyProductFinder.Models;
+using System.Data;
 
 namespace OceanFriendlyProductFinder.Services
 {
@@ -21,7 +22,7 @@ namespace OceanFriendlyProductFinder.Services
         public async Task<OceanScoreBreakdown> CalculateOceanScoreAsync(int productId)
         {
             using var connection = _databaseService.GetConnection();
-            await connection.OpenAsync();
+            connection.Open();
 
             // Get current weights from database
             var weights = await GetCurrentWeightsAsync(connection);
@@ -34,7 +35,7 @@ namespace OceanFriendlyProductFinder.Services
                 INNER JOIN ProductIngredients pi ON i.Id = pi.IngredientId
                 WHERE pi.ProductId = @productId";
 
-            using var cmd = new SqliteCommand(ingredientsQuery, connection);
+            using var cmd = new MySqlCommand(ingredientsQuery, (MySqlConnection)connection);
             cmd.Parameters.AddWithValue("@productId", productId);
 
             var ingredients = new List<Ingredient>();
@@ -43,13 +44,13 @@ namespace OceanFriendlyProductFinder.Services
             {
                 ingredients.Add(new Ingredient
                 {
-                    Id = reader.GetInt32("Id"),
-                    Name = reader.GetString("Name"),
-                    IsReefSafe = reader.GetBoolean("IsReefSafe"),
-                    BiodegradabilityScore = reader.GetInt32("BiodegradabilityScore"),
-                    CoralSafetyScore = reader.GetInt32("CoralSafetyScore"),
-                    FishSafetyScore = reader.GetInt32("FishSafetyScore"),
-                    CoverageScore = reader.GetInt32("CoverageScore")
+                    Id = reader.GetInt32(reader.GetOrdinal("Id")),
+                    Name = reader.GetString(reader.GetOrdinal("Name")),
+                    IsReefSafe = reader.GetBoolean(reader.GetOrdinal("IsReefSafe")),
+                    BiodegradabilityScore = reader.GetInt32(reader.GetOrdinal("BiodegradabilityScore")),
+                    CoralSafetyScore = reader.GetInt32(reader.GetOrdinal("CoralSafetyScore")),
+                    FishSafetyScore = reader.GetInt32(reader.GetOrdinal("FishSafetyScore")),
+                    CoverageScore = reader.GetInt32(reader.GetOrdinal("CoverageScore"))
                 });
             }
 
@@ -107,7 +108,7 @@ namespace OceanFriendlyProductFinder.Services
             }
 
             using var connection = _databaseService.GetConnection();
-            await connection.OpenAsync();
+            connection.Open();
 
             var updateQuery = @"
                 UPDATE OceanScoreWeights 
@@ -118,7 +119,7 @@ namespace OceanFriendlyProductFinder.Services
                     UpdatedAt = CURRENT_TIMESTAMP
                 WHERE Id = 1";
 
-            using var cmd = new SqliteCommand(updateQuery, connection);
+            using var cmd = new MySqlCommand(updateQuery, (MySqlConnection)connection);
             cmd.Parameters.AddWithValue("@bioWeight", request.BiodegradabilityWeight);
             cmd.Parameters.AddWithValue("@coralWeight", request.CoralSafetyWeight);
             cmd.Parameters.AddWithValue("@fishWeight", request.FishSafetyWeight);
@@ -136,26 +137,26 @@ namespace OceanFriendlyProductFinder.Services
         public async Task<OceanScoreWeights> GetCurrentWeightsAsync()
         {
             using var connection = _databaseService.GetConnection();
-            await connection.OpenAsync();
+            connection.Open();
             return await GetCurrentWeightsAsync(connection);
         }
 
-        private async Task<OceanScoreWeights> GetCurrentWeightsAsync(SqliteConnection connection)
+        private async Task<OceanScoreWeights> GetCurrentWeightsAsync(IDbConnection connection)
         {
             var query = "SELECT * FROM OceanScoreWeights WHERE Id = 1";
-            using var cmd = new SqliteCommand(query, connection);
+            using var cmd = new MySqlCommand(query, (MySqlConnection)connection);
             using var reader = await cmd.ExecuteReaderAsync();
 
             if (await reader.ReadAsync())
             {
                 return new OceanScoreWeights
                 {
-                    Id = reader.GetInt32("Id"),
-                    BiodegradabilityWeight = reader.GetDouble("BiodegradabilityWeight"),
-                    CoralSafetyWeight = reader.GetDouble("CoralSafetyWeight"),
-                    FishSafetyWeight = reader.GetDouble("FishSafetyWeight"),
-                    CoverageWeight = reader.GetDouble("CoverageWeight"),
-                    UpdatedAt = reader.GetDateTime("UpdatedAt")
+                    Id = reader.GetInt32(reader.GetOrdinal("Id")),
+                    BiodegradabilityWeight = reader.GetDouble(reader.GetOrdinal("BiodegradabilityWeight")),
+                    CoralSafetyWeight = reader.GetDouble(reader.GetOrdinal("CoralSafetyWeight")),
+                    FishSafetyWeight = reader.GetDouble(reader.GetOrdinal("FishSafetyWeight")),
+                    CoverageWeight = reader.GetDouble(reader.GetOrdinal("CoverageWeight")),
+                    UpdatedAt = reader.GetDateTime(reader.GetOrdinal("UpdatedAt"))
                 };
             }
 
@@ -190,11 +191,11 @@ namespace OceanFriendlyProductFinder.Services
             };
         }
 
-        private async Task RecalculateAllProductScoresAsync(SqliteConnection connection)
+        private async Task RecalculateAllProductScoresAsync(IDbConnection connection)
         {
             // Get all product IDs
             var productQuery = "SELECT Id FROM Products";
-            using var productCmd = new SqliteCommand(productQuery, connection);
+            using var productCmd = new MySqlCommand(productQuery, (MySqlConnection)connection);
             using var productReader = await productCmd.ExecuteReaderAsync();
 
             var productIds = new List<int>();
@@ -218,7 +219,7 @@ namespace OceanFriendlyProductFinder.Services
                         UpdatedAt = CURRENT_TIMESTAMP
                     WHERE Id = @productId";
 
-                using var updateCmd = new SqliteCommand(updateQuery, connection);
+                using var updateCmd = new MySqlCommand(updateQuery, (MySqlConnection)connection);
                 updateCmd.Parameters.AddWithValue("@oceanScore", breakdown.TotalScore);
                 updateCmd.Parameters.AddWithValue("@bioScore", breakdown.BiodegradabilityScore);
                 updateCmd.Parameters.AddWithValue("@coralScore", breakdown.CoralSafetyScore);
