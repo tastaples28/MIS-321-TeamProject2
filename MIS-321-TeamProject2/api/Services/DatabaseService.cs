@@ -1,4 +1,4 @@
-using Microsoft.Data.Sqlite;
+using MySql.Data.MySqlClient;
 using System.Data;
 
 namespace OceanFriendlyProductFinder.Services
@@ -10,64 +10,65 @@ namespace OceanFriendlyProductFinder.Services
         public DatabaseService(IConfiguration configuration)
         {
             _connectionString = configuration.GetConnectionString("DefaultConnection") ?? throw new ArgumentNullException("Connection string not found");
-            InitializeDatabase();
+            // Initialize database synchronously to ensure tables are created before seeding
+            InitializeDatabase().Wait();
         }
 
-        private void InitializeDatabase()
+        private async Task InitializeDatabase()
         {
-            using var connection = new SqliteConnection(_connectionString);
+            using var connection = new MySqlConnection(_connectionString);
             connection.Open();
 
             // Create Users table
             var createUsersTable = @"
                 CREATE TABLE IF NOT EXISTS Users (
-                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    Username TEXT UNIQUE NOT NULL,
-                    Email TEXT UNIQUE NOT NULL,
+                    Id INT AUTO_INCREMENT PRIMARY KEY,
+                    Username VARCHAR(255) UNIQUE NOT NULL,
+                    Email VARCHAR(255) UNIQUE NOT NULL,
                     PasswordHash TEXT NOT NULL,
                     SensitivityPreferences TEXT,
-                    IsAdmin BOOLEAN DEFAULT 0,
-                    CreatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
+                    IsAdmin BOOLEAN DEFAULT FALSE,
+                    CreatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )";
 
             // Create Ingredients table
             var createIngredientsTable = @"
                 CREATE TABLE IF NOT EXISTS Ingredients (
-                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    Name TEXT UNIQUE NOT NULL,
-                    IsReefSafe BOOLEAN DEFAULT 0,
-                    BiodegradabilityScore INTEGER CHECK(BiodegradabilityScore >= 0 AND BiodegradabilityScore <= 100),
-                    CoralSafetyScore INTEGER CHECK(CoralSafetyScore >= 0 AND CoralSafetyScore <= 100),
-                    FishSafetyScore INTEGER CHECK(FishSafetyScore >= 0 AND FishSafetyScore <= 100),
-                    CoverageScore INTEGER CHECK(CoverageScore >= 0 AND CoverageScore <= 100),
+                    Id INT AUTO_INCREMENT PRIMARY KEY,
+                    Name VARCHAR(255) UNIQUE NOT NULL,
+                    IsReefSafe BOOLEAN DEFAULT FALSE,
+                    BiodegradabilityScore INT CHECK(BiodegradabilityScore >= 0 AND BiodegradabilityScore <= 100),
+                    CoralSafetyScore INT CHECK(CoralSafetyScore >= 0 AND CoralSafetyScore <= 100),
+                    FishSafetyScore INT CHECK(FishSafetyScore >= 0 AND FishSafetyScore <= 100),
+                    CoverageScore INT CHECK(CoverageScore >= 0 AND CoverageScore <= 100),
                     Description TEXT,
-                    CreatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
+                    CreatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )";
 
             // Create Products table
             var createProductsTable = @"
                 CREATE TABLE IF NOT EXISTS Products (
-                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    Name TEXT NOT NULL,
-                    Brand TEXT NOT NULL,
-                    Category TEXT NOT NULL,
+                    Id INT AUTO_INCREMENT PRIMARY KEY,
+                    Name VARCHAR(255) NOT NULL,
+                    Brand VARCHAR(255) NOT NULL,
+                    Category VARCHAR(255) NOT NULL,
                     Description TEXT,
                     ImageUrl TEXT,
                     ExternalLink TEXT,
-                    OceanScore INTEGER CHECK(OceanScore >= 1 AND OceanScore <= 100),
-                    BiodegradabilityScore INTEGER CHECK(BiodegradabilityScore >= 0 AND BiodegradabilityScore <= 100),
-                    CoralSafetyScore INTEGER CHECK(CoralSafetyScore >= 0 AND CoralSafetyScore <= 100),
-                    FishSafetyScore INTEGER CHECK(FishSafetyScore >= 0 AND FishSafetyScore <= 100),
-                    CoverageScore INTEGER CHECK(CoverageScore >= 0 AND CoverageScore <= 100),
-                    CreatedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
-                    UpdatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
+                    OceanScore INT CHECK(OceanScore >= 1 AND OceanScore <= 100),
+                    BiodegradabilityScore INT CHECK(BiodegradabilityScore >= 0 AND BiodegradabilityScore <= 100),
+                    CoralSafetyScore INT CHECK(CoralSafetyScore >= 0 AND CoralSafetyScore <= 100),
+                    FishSafetyScore INT CHECK(FishSafetyScore >= 0 AND FishSafetyScore <= 100),
+                    CoverageScore INT CHECK(CoverageScore >= 0 AND CoverageScore <= 100),
+                    CreatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    UpdatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
                 )";
 
             // Create ProductIngredients junction table
             var createProductIngredientsTable = @"
                 CREATE TABLE IF NOT EXISTS ProductIngredients (
-                    ProductId INTEGER,
-                    IngredientId INTEGER,
+                    ProductId INT,
+                    IngredientId INT,
                     PRIMARY KEY (ProductId, IngredientId),
                     FOREIGN KEY (ProductId) REFERENCES Products(Id) ON DELETE CASCADE,
                     FOREIGN KEY (IngredientId) REFERENCES Ingredients(Id) ON DELETE CASCADE
@@ -76,8 +77,8 @@ namespace OceanFriendlyProductFinder.Services
             // Create UserFavorites table
             var createUserFavoritesTable = @"
                 CREATE TABLE IF NOT EXISTS UserFavorites (
-                    UserId INTEGER,
-                    ProductId INTEGER,
+                    UserId INT,
+                    ProductId INT,
                     PRIMARY KEY (UserId, ProductId),
                     FOREIGN KEY (UserId) REFERENCES Users(Id) ON DELETE CASCADE,
                     FOREIGN KEY (ProductId) REFERENCES Products(Id) ON DELETE CASCADE
@@ -86,11 +87,11 @@ namespace OceanFriendlyProductFinder.Services
             // Create AnalyticsLog table
             var createAnalyticsLogTable = @"
                 CREATE TABLE IF NOT EXISTS AnalyticsLog (
-                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    UserId INTEGER,
-                    ProductId INTEGER,
-                    Action TEXT NOT NULL,
-                    Timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    Id INT AUTO_INCREMENT PRIMARY KEY,
+                    UserId INT,
+                    ProductId INT,
+                    Action VARCHAR(255) NOT NULL,
+                    Timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     FOREIGN KEY (UserId) REFERENCES Users(Id) ON DELETE SET NULL,
                     FOREIGN KEY (ProductId) REFERENCES Products(Id) ON DELETE SET NULL
                 )";
@@ -98,12 +99,12 @@ namespace OceanFriendlyProductFinder.Services
             // Create OceanScoreWeights table for admin configuration
             var createOceanScoreWeightsTable = @"
                 CREATE TABLE IF NOT EXISTS OceanScoreWeights (
-                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    BiodegradabilityWeight REAL DEFAULT 0.3,
-                    CoralSafetyWeight REAL DEFAULT 0.3,
-                    FishSafetyWeight REAL DEFAULT 0.25,
-                    CoverageWeight REAL DEFAULT 0.15,
-                    UpdatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
+                    Id INT AUTO_INCREMENT PRIMARY KEY,
+                    BiodegradabilityWeight DECIMAL(3,2) DEFAULT 0.30,
+                    CoralSafetyWeight DECIMAL(3,2) DEFAULT 0.30,
+                    FishSafetyWeight DECIMAL(3,2) DEFAULT 0.25,
+                    CoverageWeight DECIMAL(3,2) DEFAULT 0.15,
+                    UpdatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )";
 
             var commands = new[] {
@@ -118,7 +119,7 @@ namespace OceanFriendlyProductFinder.Services
 
             foreach (var command in commands)
             {
-                using var cmd = new SqliteCommand(command, connection);
+                using var cmd = new MySqlCommand(command, (MySqlConnection)connection);
                 cmd.ExecuteNonQuery();
             }
 
@@ -129,10 +130,10 @@ namespace OceanFriendlyProductFinder.Services
             InsertDefaultWeights(connection);
         }
 
-        private void InsertDefaultAdmin(SqliteConnection connection)
+        private void InsertDefaultAdmin(IDbConnection connection)
         {
             var checkAdmin = "SELECT COUNT(*) FROM Users WHERE IsAdmin = 1";
-            using var checkCmd = new SqliteCommand(checkAdmin, connection);
+            using var checkCmd = new MySqlCommand(checkAdmin, (MySqlConnection)connection);
             var adminCount = Convert.ToInt32(checkCmd.ExecuteScalar());
 
             if (adminCount == 0)
@@ -141,31 +142,31 @@ namespace OceanFriendlyProductFinder.Services
                     INSERT INTO Users (Username, Email, PasswordHash, IsAdmin)
                     VALUES ('admin', 'admin@oceanfriendly.com', 'admin123', 1)";
                 
-                using var insertCmd = new SqliteCommand(insertAdmin, connection);
+                using var insertCmd = new MySqlCommand(insertAdmin, (MySqlConnection)connection);
                 insertCmd.ExecuteNonQuery();
             }
         }
 
-        private void InsertDefaultWeights(SqliteConnection connection)
+        private void InsertDefaultWeights(IDbConnection connection)
         {
             var checkWeights = "SELECT COUNT(*) FROM OceanScoreWeights";
-            using var checkCmd = new SqliteCommand(checkWeights, connection);
+            using var checkCmd = new MySqlCommand(checkWeights, (MySqlConnection)connection);
             var weightsCount = Convert.ToInt32(checkCmd.ExecuteScalar());
 
             if (weightsCount == 0)
             {
                 var insertWeights = @"
                     INSERT INTO OceanScoreWeights (BiodegradabilityWeight, CoralSafetyWeight, FishSafetyWeight, CoverageWeight)
-                    VALUES (0.3, 0.3, 0.25, 0.15)";
+                    VALUES (0.30, 0.30, 0.25, 0.15)";
                 
-                using var insertCmd = new SqliteCommand(insertWeights, connection);
+                using var insertCmd = new MySqlCommand(insertWeights, (MySqlConnection)connection);
                 insertCmd.ExecuteNonQuery();
             }
         }
 
         public IDbConnection GetConnection()
         {
-            return new SqliteConnection(_connectionString);
+            return new MySqlConnection(_connectionString);
         }
     }
 }

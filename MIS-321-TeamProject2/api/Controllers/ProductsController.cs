@@ -1,7 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Data.Sqlite;
+using MySql.Data.MySqlClient;
 using OceanFriendlyProductFinder.Models;
 using OceanFriendlyProductFinder.Services;
+using System.Data;
 
 namespace OceanFriendlyProductFinder.Controllers
 {
@@ -22,45 +23,45 @@ namespace OceanFriendlyProductFinder.Controllers
         public async Task<ActionResult<ProductSearchResponse>> GetProducts([FromQuery] ProductSearchRequest request)
         {
             using var connection = _databaseService.GetConnection();
-            await connection.OpenAsync();
+            connection.Open();
 
             var whereClause = "WHERE 1=1";
-            var parameters = new List<SqliteParameter>();
+            var parameters = new List<MySqlParameter>();
 
             // Build dynamic WHERE clause based on search criteria
             if (!string.IsNullOrEmpty(request.SearchTerm))
             {
                 whereClause += " AND (p.Name LIKE @searchTerm OR p.Brand LIKE @searchTerm OR p.Category LIKE @searchTerm)";
-                parameters.Add(new SqliteParameter("@searchTerm", $"%{request.SearchTerm}%"));
+                parameters.Add(new MySqlParameter("@searchTerm", $"%{request.SearchTerm}%"));
             }
 
             if (!string.IsNullOrEmpty(request.Category))
             {
                 whereClause += " AND p.Category = @category";
-                parameters.Add(new SqliteParameter("@category", request.Category));
+                parameters.Add(new MySqlParameter("@category", request.Category));
             }
 
             if (!string.IsNullOrEmpty(request.Brand))
             {
                 whereClause += " AND p.Brand = @brand";
-                parameters.Add(new SqliteParameter("@brand", request.Brand));
+                parameters.Add(new MySqlParameter("@brand", request.Brand));
             }
 
             if (request.MinOceanScore.HasValue)
             {
                 whereClause += " AND p.OceanScore >= @minScore";
-                parameters.Add(new SqliteParameter("@minScore", request.MinOceanScore.Value));
+                parameters.Add(new MySqlParameter("@minScore", request.MinOceanScore.Value));
             }
 
             if (request.MaxOceanScore.HasValue)
             {
                 whereClause += " AND p.OceanScore <= @maxScore";
-                parameters.Add(new SqliteParameter("@maxScore", request.MaxOceanScore.Value));
+                parameters.Add(new MySqlParameter("@maxScore", request.MaxOceanScore.Value));
             }
 
             // Get total count
             var countQuery = $"SELECT COUNT(*) FROM Products p {whereClause}";
-            using var countCmd = new SqliteCommand(countQuery, connection);
+            using var countCmd = new MySqlCommand(countQuery, (MySqlConnection)connection);
             countCmd.Parameters.AddRange(parameters.ToArray());
             var totalCount = Convert.ToInt32(await countCmd.ExecuteScalarAsync());
 
@@ -78,10 +79,10 @@ namespace OceanFriendlyProductFinder.Controllers
                 ORDER BY p.OceanScore DESC, p.Name
                 LIMIT @pageSize OFFSET @offset";
 
-            using var productsCmd = new SqliteCommand(productsQuery, connection);
+            using var productsCmd = new MySqlCommand(productsQuery, (MySqlConnection)connection);
             productsCmd.Parameters.AddRange(parameters.ToArray());
-            productsCmd.Parameters.Add(new SqliteParameter("@pageSize", pageSize));
-            productsCmd.Parameters.Add(new SqliteParameter("@offset", offset));
+            productsCmd.Parameters.Add(new MySqlParameter("@pageSize", pageSize));
+            productsCmd.Parameters.Add(new MySqlParameter("@offset", offset));
 
             var products = new List<Product>();
             using var reader = await productsCmd.ExecuteReaderAsync();
@@ -89,24 +90,24 @@ namespace OceanFriendlyProductFinder.Controllers
             {
                 var product = new Product
                 {
-                    Id = reader.GetInt32("Id"),
-                    Name = reader.GetString("Name"),
-                    Brand = reader.GetString("Brand"),
-                    Category = reader.GetString("Category"),
-                    Description = reader.IsDBNull("Description") ? null : reader.GetString("Description"),
-                    ImageUrl = reader.IsDBNull("ImageUrl") ? null : reader.GetString("ImageUrl"),
-                    ExternalLink = reader.IsDBNull("ExternalLink") ? null : reader.GetString("ExternalLink"),
-                    OceanScore = reader.GetInt32("OceanScore"),
-                    BiodegradabilityScore = reader.GetInt32("BiodegradabilityScore"),
-                    CoralSafetyScore = reader.GetInt32("CoralSafetyScore"),
-                    FishSafetyScore = reader.GetInt32("FishSafetyScore"),
-                    CoverageScore = reader.GetInt32("CoverageScore"),
-                    CreatedAt = reader.GetDateTime("CreatedAt"),
-                    UpdatedAt = reader.GetDateTime("UpdatedAt")
+                    Id = reader.GetInt32(reader.GetOrdinal("Id")),
+                    Name = reader.GetString(reader.GetOrdinal("Name")),
+                    Brand = reader.GetString(reader.GetOrdinal("Brand")),
+                    Category = reader.GetString(reader.GetOrdinal("Category")),
+                    Description = reader.IsDBNull(reader.GetOrdinal("Description")) ? null : reader.GetString(reader.GetOrdinal("Description")),
+                    ImageUrl = reader.IsDBNull(reader.GetOrdinal("ImageUrl")) ? null : reader.GetString(reader.GetOrdinal("ImageUrl")),
+                    ExternalLink = reader.IsDBNull(reader.GetOrdinal("ExternalLink")) ? null : reader.GetString(reader.GetOrdinal("ExternalLink")),
+                    OceanScore = reader.GetInt32(reader.GetOrdinal("OceanScore")),
+                    BiodegradabilityScore = reader.GetInt32(reader.GetOrdinal("BiodegradabilityScore")),
+                    CoralSafetyScore = reader.GetInt32(reader.GetOrdinal("CoralSafetyScore")),
+                    FishSafetyScore = reader.GetInt32(reader.GetOrdinal("FishSafetyScore")),
+                    CoverageScore = reader.GetInt32(reader.GetOrdinal("CoverageScore")),
+                    CreatedAt = reader.GetDateTime(reader.GetOrdinal("CreatedAt")),
+                    UpdatedAt = reader.GetDateTime(reader.GetOrdinal("UpdatedAt"))
                 };
 
                 // Load ingredients for this product
-                product.Ingredients = await GetProductIngredientsAsync(connection, product.Id);
+                product.Ingredients = await GetProductIngredientsAsync(product.Id);
                 products.Add(product);
             }
 
@@ -123,7 +124,7 @@ namespace OceanFriendlyProductFinder.Controllers
         public async Task<ActionResult<Product>> GetProduct(int id)
         {
             using var connection = _databaseService.GetConnection();
-            await connection.OpenAsync();
+            connection.Open();
 
             var query = @"
                 SELECT Id, Name, Brand, Category, Description, ImageUrl, ExternalLink,
@@ -132,7 +133,7 @@ namespace OceanFriendlyProductFinder.Controllers
                 FROM Products
                 WHERE Id = @id";
 
-            using var cmd = new SqliteCommand(query, connection);
+            using var cmd = new MySqlCommand(query, (MySqlConnection)connection);
             cmd.Parameters.AddWithValue("@id", id);
 
             using var reader = await cmd.ExecuteReaderAsync();
@@ -143,23 +144,23 @@ namespace OceanFriendlyProductFinder.Controllers
 
             var product = new Product
             {
-                Id = reader.GetInt32("Id"),
-                Name = reader.GetString("Name"),
-                Brand = reader.GetString("Brand"),
-                Category = reader.GetString("Category"),
-                Description = reader.IsDBNull("Description") ? null : reader.GetString("Description"),
-                ImageUrl = reader.IsDBNull("ImageUrl") ? null : reader.GetString("ImageUrl"),
-                ExternalLink = reader.IsDBNull("ExternalLink") ? null : reader.GetString("ExternalLink"),
-                OceanScore = reader.GetInt32("OceanScore"),
-                BiodegradabilityScore = reader.GetInt32("BiodegradabilityScore"),
-                CoralSafetyScore = reader.GetInt32("CoralSafetyScore"),
-                FishSafetyScore = reader.GetInt32("FishSafetyScore"),
-                CoverageScore = reader.GetInt32("CoverageScore"),
-                CreatedAt = reader.GetDateTime("CreatedAt"),
-                UpdatedAt = reader.GetDateTime("UpdatedAt")
+                Id = reader.GetInt32(reader.GetOrdinal("Id")),
+                Name = reader.GetString(reader.GetOrdinal("Name")),
+                Brand = reader.GetString(reader.GetOrdinal("Brand")),
+                Category = reader.GetString(reader.GetOrdinal("Category")),
+                Description = reader.IsDBNull(reader.GetOrdinal("Description")) ? null : reader.GetString(reader.GetOrdinal("Description")),
+                ImageUrl = reader.IsDBNull(reader.GetOrdinal("ImageUrl")) ? null : reader.GetString(reader.GetOrdinal("ImageUrl")),
+                ExternalLink = reader.IsDBNull(reader.GetOrdinal("ExternalLink")) ? null : reader.GetString(reader.GetOrdinal("ExternalLink")),
+                OceanScore = reader.GetInt32(reader.GetOrdinal("OceanScore")),
+                BiodegradabilityScore = reader.GetInt32(reader.GetOrdinal("BiodegradabilityScore")),
+                CoralSafetyScore = reader.GetInt32(reader.GetOrdinal("CoralSafetyScore")),
+                FishSafetyScore = reader.GetInt32(reader.GetOrdinal("FishSafetyScore")),
+                CoverageScore = reader.GetInt32(reader.GetOrdinal("CoverageScore")),
+                CreatedAt = reader.GetDateTime(reader.GetOrdinal("CreatedAt")),
+                UpdatedAt = reader.GetDateTime(reader.GetOrdinal("UpdatedAt"))
             };
 
-            product.Ingredients = await GetProductIngredientsAsync(connection, product.Id);
+            product.Ingredients = await GetProductIngredientsAsync(product.Id);
 
             return Ok(product);
         }
@@ -182,19 +183,18 @@ namespace OceanFriendlyProductFinder.Controllers
         public async Task<ActionResult<Product>> CreateProduct([FromBody] ProductCreateRequest request)
         {
             using var connection = _databaseService.GetConnection();
-            await connection.OpenAsync();
+            connection.Open();
             using var transaction = connection.BeginTransaction();
 
             try
             {
-                // Insert product
-                var insertQuery = @"
-                    INSERT INTO Products (Name, Brand, Category, Description, ImageUrl, ExternalLink, 
-                                        OceanScore, BiodegradabilityScore, CoralSafetyScore, FishSafetyScore, CoverageScore)
-                    VALUES (@name, @brand, @category, @description, @imageUrl, @externalLink, 0, 0, 0, 0, 0)
-                    RETURNING Id";
+                 // Insert product
+                 var insertQuery = @"
+                     INSERT INTO Products (Name, Brand, Category, Description, ImageUrl, ExternalLink, 
+                                         OceanScore, BiodegradabilityScore, CoralSafetyScore, FishSafetyScore, CoverageScore)
+                     VALUES (@name, @brand, @category, @description, @imageUrl, @externalLink, 0, 0, 0, 0, 0) RETURNING Id";
 
-                using var cmd = new SqliteCommand(insertQuery, connection, transaction);
+                using var cmd = new MySqlCommand(insertQuery, (MySqlConnection)connection, (MySqlTransaction)transaction);
                 cmd.Parameters.AddWithValue("@name", request.Name);
                 cmd.Parameters.AddWithValue("@brand", request.Brand);
                 cmd.Parameters.AddWithValue("@category", request.Category);
@@ -202,13 +202,13 @@ namespace OceanFriendlyProductFinder.Controllers
                 cmd.Parameters.AddWithValue("@imageUrl", request.ImageUrl ?? (object)DBNull.Value);
                 cmd.Parameters.AddWithValue("@externalLink", request.ExternalLink ?? (object)DBNull.Value);
 
-                var productId = Convert.ToInt32(await cmd.ExecuteScalarAsync());
+                 var productId = Convert.ToInt32(await cmd.ExecuteScalarAsync());
 
                 // Link ingredients
                 foreach (var ingredientId in request.IngredientIds)
                 {
-                    var linkQuery = "INSERT INTO ProductIngredients (ProductId, IngredientId) VALUES (@productId, @ingredientId)";
-                    using var linkCmd = new SqliteCommand(linkQuery, connection, transaction);
+                    var linkQuery = "INSERT INTO ProductIngredients (ProductId, IngredientId) VALUES (@productId, @ingredientId) RETURNING Id";
+                    using var linkCmd = new MySqlCommand(linkQuery, (MySqlConnection)connection, (MySqlTransaction)transaction);
                     linkCmd.Parameters.AddWithValue("@productId", productId);
                     linkCmd.Parameters.AddWithValue("@ingredientId", ingredientId);
                     await linkCmd.ExecuteNonQueryAsync();
@@ -227,7 +227,7 @@ namespace OceanFriendlyProductFinder.Controllers
                         UpdatedAt = CURRENT_TIMESTAMP
                     WHERE Id = @productId";
 
-                using var updateCmd = new SqliteCommand(updateQuery, connection, transaction);
+                using var updateCmd = new MySqlCommand(updateQuery, (MySqlConnection)connection, (MySqlTransaction)transaction);
                 updateCmd.Parameters.AddWithValue("@oceanScore", breakdown.TotalScore);
                 updateCmd.Parameters.AddWithValue("@bioScore", breakdown.BiodegradabilityScore);
                 updateCmd.Parameters.AddWithValue("@coralScore", breakdown.CoralSafetyScore);
@@ -253,7 +253,7 @@ namespace OceanFriendlyProductFinder.Controllers
         public async Task<ActionResult<Product>> UpdateProduct(int id, [FromBody] ProductCreateRequest request)
         {
             using var connection = _databaseService.GetConnection();
-            await connection.OpenAsync();
+            connection.Open();
             using var transaction = connection.BeginTransaction();
 
             try
@@ -266,7 +266,7 @@ namespace OceanFriendlyProductFinder.Controllers
                         UpdatedAt = CURRENT_TIMESTAMP
                     WHERE Id = @id";
 
-                using var cmd = new SqliteCommand(updateQuery, connection, transaction);
+                using var cmd = new MySqlCommand(updateQuery, (MySqlConnection)connection, (MySqlTransaction)transaction);
                 cmd.Parameters.AddWithValue("@id", id);
                 cmd.Parameters.AddWithValue("@name", request.Name);
                 cmd.Parameters.AddWithValue("@brand", request.Brand);
@@ -284,14 +284,14 @@ namespace OceanFriendlyProductFinder.Controllers
 
                 // Update ingredient links
                 var deleteLinksQuery = "DELETE FROM ProductIngredients WHERE ProductId = @productId";
-                using var deleteCmd = new SqliteCommand(deleteLinksQuery, connection, transaction);
+                using var deleteCmd = new MySqlCommand(deleteLinksQuery, (MySqlConnection)connection, (MySqlTransaction)transaction);
                 deleteCmd.Parameters.AddWithValue("@productId", id);
                 await deleteCmd.ExecuteNonQueryAsync();
 
                 foreach (var ingredientId in request.IngredientIds)
                 {
-                    var linkQuery = "INSERT INTO ProductIngredients (ProductId, IngredientId) VALUES (@productId, @ingredientId)";
-                    using var linkCmd = new SqliteCommand(linkQuery, connection, transaction);
+                    var linkQuery = "INSERT INTO ProductIngredients (ProductId, IngredientId) VALUES (@productId, @ingredientId) RETURNING Id";
+                    using var linkCmd = new MySqlCommand(linkQuery, (MySqlConnection)connection, (MySqlTransaction)transaction);
                     linkCmd.Parameters.AddWithValue("@productId", id);
                     linkCmd.Parameters.AddWithValue("@ingredientId", ingredientId);
                     await linkCmd.ExecuteNonQueryAsync();
@@ -310,7 +310,7 @@ namespace OceanFriendlyProductFinder.Controllers
                         UpdatedAt = CURRENT_TIMESTAMP
                     WHERE Id = @productId";
 
-                using var scoreUpdateCmd = new SqliteCommand(scoreUpdateQuery, connection, transaction);
+                using var scoreUpdateCmd = new MySqlCommand(scoreUpdateQuery, (MySqlConnection)connection, (MySqlTransaction)transaction);
                 scoreUpdateCmd.Parameters.AddWithValue("@oceanScore", breakdown.TotalScore);
                 scoreUpdateCmd.Parameters.AddWithValue("@bioScore", breakdown.BiodegradabilityScore);
                 scoreUpdateCmd.Parameters.AddWithValue("@coralScore", breakdown.CoralSafetyScore);
@@ -336,10 +336,10 @@ namespace OceanFriendlyProductFinder.Controllers
         public async Task<ActionResult> DeleteProduct(int id)
         {
             using var connection = _databaseService.GetConnection();
-            await connection.OpenAsync();
+            connection.Open();
 
             var query = "DELETE FROM Products WHERE Id = @id";
-            using var cmd = new SqliteCommand(query, connection);
+            using var cmd = new MySqlCommand(query, (MySqlConnection)connection);
             cmd.Parameters.AddWithValue("@id", id);
 
             var rowsAffected = await cmd.ExecuteNonQueryAsync();
@@ -351,8 +351,11 @@ namespace OceanFriendlyProductFinder.Controllers
             return NoContent();
         }
 
-        private async Task<List<Ingredient>> GetProductIngredientsAsync(SqliteConnection connection, int productId)
+         private async Task<List<Ingredient>> GetProductIngredientsAsync(int productId)
         {
+            using var connection = _databaseService.GetConnection();
+            connection.Open();
+
             var query = @"
                 SELECT i.Id, i.Name, i.IsReefSafe, i.BiodegradabilityScore, 
                        i.CoralSafetyScore, i.FishSafetyScore, i.CoverageScore, i.Description, i.CreatedAt
@@ -360,7 +363,7 @@ namespace OceanFriendlyProductFinder.Controllers
                 INNER JOIN ProductIngredients pi ON i.Id = pi.IngredientId
                 WHERE pi.ProductId = @productId";
 
-            using var cmd = new SqliteCommand(query, connection);
+            using var cmd = new MySqlCommand(query, (MySqlConnection)connection);
             cmd.Parameters.AddWithValue("@productId", productId);
 
             var ingredients = new List<Ingredient>();
@@ -369,15 +372,15 @@ namespace OceanFriendlyProductFinder.Controllers
             {
                 ingredients.Add(new Ingredient
                 {
-                    Id = reader.GetInt32("Id"),
-                    Name = reader.GetString("Name"),
-                    IsReefSafe = reader.GetBoolean("IsReefSafe"),
-                    BiodegradabilityScore = reader.GetInt32("BiodegradabilityScore"),
-                    CoralSafetyScore = reader.GetInt32("CoralSafetyScore"),
-                    FishSafetyScore = reader.GetInt32("FishSafetyScore"),
-                    CoverageScore = reader.GetInt32("CoverageScore"),
-                    Description = reader.IsDBNull("Description") ? null : reader.GetString("Description"),
-                    CreatedAt = reader.GetDateTime("CreatedAt")
+                    Id = reader.GetInt32(reader.GetOrdinal("Id")),
+                    Name = reader.GetString(reader.GetOrdinal("Name")),
+                    IsReefSafe = reader.GetBoolean(reader.GetOrdinal("IsReefSafe")),
+                    BiodegradabilityScore = reader.GetInt32(reader.GetOrdinal("BiodegradabilityScore")),
+                    CoralSafetyScore = reader.GetInt32(reader.GetOrdinal("CoralSafetyScore")),
+                    FishSafetyScore = reader.GetInt32(reader.GetOrdinal("FishSafetyScore")),
+                    CoverageScore = reader.GetInt32(reader.GetOrdinal("CoverageScore")),
+                    Description = reader.IsDBNull(reader.GetOrdinal("Description")) ? null : reader.GetString(reader.GetOrdinal("Description")),
+                    CreatedAt = reader.GetDateTime(reader.GetOrdinal("CreatedAt"))
                 });
             }
 

@@ -1,7 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Data.Sqlite;
+using MySql.Data.MySqlClient;
 using OceanFriendlyProductFinder.Models;
 using OceanFriendlyProductFinder.Services;
+using System.Data;
 
 namespace OceanFriendlyProductFinder.Controllers
 {
@@ -20,7 +21,7 @@ namespace OceanFriendlyProductFinder.Controllers
         public async Task<ActionResult<AnalyticsSummary>> GetAnalyticsSummary()
         {
             using var connection = _databaseService.GetConnection();
-            await connection.OpenAsync();
+            connection.Open();
 
             // Get total counts
             var totalSearches = await GetTotalCountAsync(connection, "Action = 'search'");
@@ -55,13 +56,13 @@ namespace OceanFriendlyProductFinder.Controllers
         public async Task<ActionResult> LogAction([FromBody] AnalyticsLog log)
         {
             using var connection = _databaseService.GetConnection();
-            await connection.OpenAsync();
+            connection.Open();
 
             var query = @"
                 INSERT INTO AnalyticsLog (UserId, ProductId, Action)
-                VALUES (@userId, @productId, @action)";
+                VALUES (@userId, @productId, @action) RETURNING Id";
 
-            using var cmd = new SqliteCommand(query, connection);
+            using var cmd = new MySqlCommand(query, (MySqlConnection)connection);
             cmd.Parameters.AddWithValue("@userId", log.UserId ?? (object)DBNull.Value);
             cmd.Parameters.AddWithValue("@productId", log.ProductId ?? (object)DBNull.Value);
             cmd.Parameters.AddWithValue("@action", log.Action);
@@ -75,7 +76,7 @@ namespace OceanFriendlyProductFinder.Controllers
         public async Task<ActionResult> ExportAnalyticsCsv()
         {
             using var connection = _databaseService.GetConnection();
-            await connection.OpenAsync();
+            connection.Open();
 
             var query = @"
                 SELECT al.Id, al.UserId, al.ProductId, al.Action, al.Timestamp,
@@ -85,7 +86,7 @@ namespace OceanFriendlyProductFinder.Controllers
                 LEFT JOIN Products p ON al.ProductId = p.Id
                 ORDER BY al.Timestamp DESC";
 
-            using var cmd = new SqliteCommand(query, connection);
+            using var cmd = new MySqlCommand(query, (MySqlConnection)connection);
             using var reader = await cmd.ExecuteReaderAsync();
 
             var csv = new System.Text.StringBuilder();
@@ -93,16 +94,16 @@ namespace OceanFriendlyProductFinder.Controllers
 
             while (await reader.ReadAsync())
             {
-                var id = reader.GetInt32("Id");
-                var userId = reader.IsDBNull("UserId") ? "" : reader.GetInt32("UserId").ToString();
-                var username = reader.IsDBNull("Username") ? "" : reader.GetString("Username");
-                var productId = reader.IsDBNull("ProductId") ? "" : reader.GetInt32("ProductId").ToString();
-                var productName = reader.IsDBNull("ProductName") ? "" : reader.GetString("ProductName");
-                var brand = reader.IsDBNull("Brand") ? "" : reader.GetString("Brand");
-                var category = reader.IsDBNull("Category") ? "" : reader.GetString("Category");
-                var oceanScore = reader.IsDBNull("OceanScore") ? "" : reader.GetInt32("OceanScore").ToString();
-                var action = reader.GetString("Action");
-                var timestamp = reader.GetDateTime("Timestamp").ToString("yyyy-MM-dd HH:mm:ss");
+                var id = reader.GetInt32(reader.GetOrdinal("Id"));
+                var userId = reader.IsDBNull(reader.GetOrdinal("UserId")) ? "" : reader.GetInt32(reader.GetOrdinal("UserId")).ToString();
+                var username = reader.IsDBNull(reader.GetOrdinal("Username")) ? "" : reader.GetString(reader.GetOrdinal("Username"));
+                var productId = reader.IsDBNull(reader.GetOrdinal("ProductId")) ? "" : reader.GetInt32(reader.GetOrdinal("ProductId")).ToString();
+                var productName = reader.IsDBNull(reader.GetOrdinal("ProductName")) ? "" : reader.GetString(reader.GetOrdinal("ProductName"));
+                var brand = reader.IsDBNull(reader.GetOrdinal("Brand")) ? "" : reader.GetString(reader.GetOrdinal("Brand"));
+                var category = reader.IsDBNull(reader.GetOrdinal("Category")) ? "" : reader.GetString(reader.GetOrdinal("Category"));
+                var oceanScore = reader.IsDBNull(reader.GetOrdinal("OceanScore")) ? "" : reader.GetInt32(reader.GetOrdinal("OceanScore")).ToString();
+                var action = reader.GetString(reader.GetOrdinal("Action"));
+                var timestamp = reader.GetDateTime(reader.GetOrdinal("Timestamp")).ToString("yyyy-MM-dd HH:mm:ss");
 
                 csv.AppendLine($"{id},{userId},{username},{productId},{productName},{brand},{category},{oceanScore},{action},{timestamp}");
             }
@@ -111,14 +112,14 @@ namespace OceanFriendlyProductFinder.Controllers
             return File(csvBytes, "text/csv", $"analytics_export_{DateTime.Now:yyyyMMdd_HHmmss}.csv");
         }
 
-        private async Task<int> GetTotalCountAsync(SqliteConnection connection, string whereClause)
+        private async Task<int> GetTotalCountAsync(IDbConnection connection, string whereClause)
         {
             var query = $"SELECT COUNT(*) FROM AnalyticsLog WHERE {whereClause}";
-            using var cmd = new SqliteCommand(query, connection);
+            using var cmd = new MySqlCommand(query, (MySqlConnection)connection);
             return Convert.ToInt32(await cmd.ExecuteScalarAsync());
         }
 
-        private async Task<List<ProductAnalytics>> GetTopProductsAsync(SqliteConnection connection)
+        private async Task<List<ProductAnalytics>> GetTopProductsAsync(IDbConnection connection)
         {
             var query = @"
                 SELECT p.Id, p.Name, p.Brand, p.OceanScore,
@@ -130,7 +131,7 @@ namespace OceanFriendlyProductFinder.Controllers
                 ORDER BY ViewCount DESC, FavoriteCount DESC
                 LIMIT 10";
 
-            using var cmd = new SqliteCommand(query, connection);
+            using var cmd = new MySqlCommand(query, (MySqlConnection)connection);
             var products = new List<ProductAnalytics>();
 
             using var reader = await cmd.ExecuteReaderAsync();
@@ -138,19 +139,19 @@ namespace OceanFriendlyProductFinder.Controllers
             {
                 products.Add(new ProductAnalytics
                 {
-                    ProductId = reader.GetInt32("Id"),
-                    ProductName = reader.GetString("Name"),
-                    Brand = reader.GetString("Brand"),
-                    OceanScore = reader.GetInt32("OceanScore"),
-                    ViewCount = reader.GetInt32("ViewCount"),
-                    FavoriteCount = reader.GetInt32("FavoriteCount")
+                    ProductId = reader.GetInt32(reader.GetOrdinal("Id")),
+                    ProductName = reader.GetString(reader.GetOrdinal("Name")),
+                    Brand = reader.GetString(reader.GetOrdinal("Brand")),
+                    OceanScore = reader.GetInt32(reader.GetOrdinal("OceanScore")),
+                    ViewCount = reader.GetInt32(reader.GetOrdinal("ViewCount")),
+                    FavoriteCount = reader.GetInt32(reader.GetOrdinal("FavoriteCount"))
                 });
             }
 
             return products;
         }
 
-        private async Task<List<IngredientAnalytics>> GetTopIngredientsAsync(SqliteConnection connection)
+        private async Task<List<IngredientAnalytics>> GetTopIngredientsAsync(IDbConnection connection)
         {
             var query = @"
                 SELECT i.Id, i.Name, i.IsReefSafe, COUNT(pi.ProductId) as UsageCount
@@ -160,7 +161,7 @@ namespace OceanFriendlyProductFinder.Controllers
                 ORDER BY UsageCount DESC
                 LIMIT 10";
 
-            using var cmd = new SqliteCommand(query, connection);
+            using var cmd = new MySqlCommand(query, (MySqlConnection)connection);
             var ingredients = new List<IngredientAnalytics>();
 
             using var reader = await cmd.ExecuteReaderAsync();
@@ -168,17 +169,17 @@ namespace OceanFriendlyProductFinder.Controllers
             {
                 ingredients.Add(new IngredientAnalytics
                 {
-                    IngredientId = reader.GetInt32("Id"),
-                    IngredientName = reader.GetString("Name"),
-                    IsReefSafe = reader.GetBoolean("IsReefSafe"),
-                    UsageCount = reader.GetInt32("UsageCount")
+                    IngredientId = reader.GetInt32(reader.GetOrdinal("Id")),
+                    IngredientName = reader.GetString(reader.GetOrdinal("Name")),
+                    IsReefSafe = reader.GetBoolean(reader.GetOrdinal("IsReefSafe")),
+                    UsageCount = reader.GetInt32(reader.GetOrdinal("UsageCount"))
                 });
             }
 
             return ingredients;
         }
 
-        private async Task<List<CategoryAnalytics>> GetCategoryStatsAsync(SqliteConnection connection)
+        private async Task<List<CategoryAnalytics>> GetCategoryStatsAsync(IDbConnection connection)
         {
             var query = @"
                 SELECT Category, COUNT(*) as ProductCount, AVG(OceanScore) as AverageOceanScore
@@ -186,7 +187,7 @@ namespace OceanFriendlyProductFinder.Controllers
                 GROUP BY Category
                 ORDER BY ProductCount DESC";
 
-            using var cmd = new SqliteCommand(query, connection);
+            using var cmd = new MySqlCommand(query, (MySqlConnection)connection);
             var categories = new List<CategoryAnalytics>();
 
             using var reader = await cmd.ExecuteReaderAsync();
@@ -194,19 +195,19 @@ namespace OceanFriendlyProductFinder.Controllers
             {
                 categories.Add(new CategoryAnalytics
                 {
-                    Category = reader.GetString("Category"),
-                    ProductCount = reader.GetInt32("ProductCount"),
-                    AverageOceanScore = Math.Round(reader.GetDouble("AverageOceanScore"), 2)
+                    Category = reader.GetString(reader.GetOrdinal("Category")),
+                    ProductCount = reader.GetInt32(reader.GetOrdinal("ProductCount")),
+                    AverageOceanScore = Math.Round(reader.GetDouble(reader.GetOrdinal("AverageOceanScore")), 2)
                 });
             }
 
             return categories;
         }
 
-        private async Task<double> GetAverageOceanScoreAsync(SqliteConnection connection)
+        private async Task<double> GetAverageOceanScoreAsync(IDbConnection connection)
         {
             var query = "SELECT AVG(OceanScore) FROM Products";
-            using var cmd = new SqliteCommand(query, connection);
+            using var cmd = new MySqlCommand(query, (MySqlConnection)connection);
             var result = await cmd.ExecuteScalarAsync();
             return result == DBNull.Value ? 0 : Math.Round(Convert.ToDouble(result), 2);
         }

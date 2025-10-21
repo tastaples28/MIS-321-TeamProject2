@@ -1,5 +1,6 @@
-using Microsoft.Data.Sqlite;
+using MySql.Data.MySqlClient;
 using OceanFriendlyProductFinder.Services;
+using System.Data;
 
 namespace OceanFriendlyProductFinder.Services
 {
@@ -15,11 +16,11 @@ namespace OceanFriendlyProductFinder.Services
         public async Task SeedDataAsync()
         {
             using var connection = _databaseService.GetConnection();
-            await connection.OpenAsync();
+            connection.Open();
 
             // Check if data already exists
             var checkProducts = "SELECT COUNT(*) FROM Products";
-            using var checkCmd = new SqliteCommand(checkProducts, connection);
+            using var checkCmd = new MySqlCommand(checkProducts, (MySqlConnection)connection);
             var productCount = Convert.ToInt32(await checkCmd.ExecuteScalarAsync());
 
             if (productCount > 0)
@@ -27,15 +28,80 @@ namespace OceanFriendlyProductFinder.Services
                 return; // Data already seeded
             }
 
-            // Seed ingredients first
+            // Seed users first
+            await SeedUsersAsync(connection);
+            
+            // Seed ingredients
             await SeedIngredientsAsync(connection);
             
             // Seed products
             await SeedProductsAsync(connection);
+            
+            // Seed user favorites and analytics
+            await SeedUserFavoritesAsync(connection);
+            await SeedAnalyticsAsync(connection);
         }
 
-        private async Task SeedIngredientsAsync(SqliteConnection connection)
+        private async Task SeedUsersAsync(IDbConnection connection)
         {
+            // Check if users already exist
+            var checkUsers = "SELECT COUNT(*) FROM Users WHERE IsAdmin = 0";
+            using var checkCmd = new MySqlCommand(checkUsers, (MySqlConnection)connection);
+            var userCount = Convert.ToInt32(await checkCmd.ExecuteScalarAsync());
+
+            if (userCount > 0)
+            {
+                return; // Users already seeded
+            }
+
+            var users = new[]
+            {
+                // Regular users (students/consumers)
+                new { Username = "sarah_marine", Email = "sarah@example.com", Password = "password123", IsAdmin = false, Sensitivity = "Coral reef protection" },
+                new { Username = "mike_ocean", Email = "mike@example.com", Password = "password123", IsAdmin = false, Sensitivity = "Fish safety" },
+                new { Username = "lisa_eco", Email = "lisa@example.com", Password = "password123", IsAdmin = false, Sensitivity = "Biodegradability" },
+                new { Username = "david_reef", Email = "david@example.com", Password = "password123", IsAdmin = false, Sensitivity = "Marine ecosystem health" },
+                new { Username = "emma_blue", Email = "emma@example.com", Password = "password123", IsAdmin = false, Sensitivity = "Ocean conservation" },
+                new { Username = "james_wave", Email = "james@example.com", Password = "password123", IsAdmin = false, Sensitivity = "Coral reef protection" },
+                new { Username = "anna_sea", Email = "anna@example.com", Password = "password123", IsAdmin = false, Sensitivity = "Fish safety" },
+                new { Username = "tom_marine", Email = "tom@example.com", Password = "password123", IsAdmin = false, Sensitivity = "Biodegradability" },
+                
+                // Admin users (teachers/instructors)
+                new { Username = "prof_marine_bio", Email = "prof.marine@university.edu", Password = "admin123", IsAdmin = true, Sensitivity = "Marine biology education" },
+                new { Username = "dr_ocean_science", Email = "dr.ocean@university.edu", Password = "admin123", IsAdmin = true, Sensitivity = "Ocean science research" },
+                new { Username = "instructor_eco", Email = "instructor.eco@college.edu", Password = "admin123", IsAdmin = true, Sensitivity = "Environmental education" },
+                new { Username = "teacher_biology", Email = "teacher.bio@school.edu", Password = "admin123", IsAdmin = true, Sensitivity = "Biology education" }
+            };
+
+            var insertUser = @"
+                INSERT INTO Users (Username, Email, PasswordHash, SensitivityPreferences, IsAdmin)
+                VALUES (@username, @email, @passwordHash, @sensitivity, @isAdmin)";
+
+            foreach (var user in users)
+            {
+                using var cmd = new MySqlCommand(insertUser, (MySqlConnection)connection);
+                cmd.Parameters.AddWithValue("@username", user.Username);
+                cmd.Parameters.AddWithValue("@email", user.Email);
+                cmd.Parameters.AddWithValue("@passwordHash", user.Password); // In real app, this should be hashed
+                cmd.Parameters.AddWithValue("@sensitivity", user.Sensitivity);
+                cmd.Parameters.AddWithValue("@isAdmin", user.IsAdmin);
+
+                await cmd.ExecuteNonQueryAsync();
+            }
+        }
+
+        private async Task SeedIngredientsAsync(IDbConnection connection)
+        {
+            // Check if ingredients already exist
+            var checkIngredients = "SELECT COUNT(*) FROM Ingredients";
+            using var checkCmd = new MySqlCommand(checkIngredients, (MySqlConnection)connection);
+            var ingredientCount = Convert.ToInt32(await checkCmd.ExecuteScalarAsync());
+
+            if (ingredientCount > 0)
+            {
+                return; // Ingredients already seeded
+            }
+
             var ingredients = new[]
             {
                 // Reef-safe ingredients
@@ -69,7 +135,7 @@ namespace OceanFriendlyProductFinder.Services
 
             foreach (var ingredient in ingredients)
             {
-                using var cmd = new SqliteCommand(insertIngredient, connection);
+                using var cmd = new MySqlCommand(insertIngredient, (MySqlConnection)connection);
                 cmd.Parameters.AddWithValue("@name", ingredient.Name);
                 cmd.Parameters.AddWithValue("@isReefSafe", ingredient.IsReefSafe);
                 cmd.Parameters.AddWithValue("@bioScore", ingredient.BioScore);
@@ -82,7 +148,7 @@ namespace OceanFriendlyProductFinder.Services
             }
         }
 
-        private async Task SeedProductsAsync(SqliteConnection connection)
+        private async Task SeedProductsAsync(IDbConnection connection)
         {
             var products = new[]
             {
@@ -275,41 +341,205 @@ namespace OceanFriendlyProductFinder.Services
 
             foreach (var product in products)
             {
+                // Calculate scores based on ingredients
+                var (oceanScore, bioScore, coralScore, fishScore, coverageScore) = CalculateProductScores(product.IngredientNames, connection);
+
                 // Insert product
                 var insertProduct = @"
                     INSERT INTO Products (Name, Brand, Category, Description, ImageUrl, ExternalLink, 
                                         OceanScore, BiodegradabilityScore, CoralSafetyScore, FishSafetyScore, CoverageScore)
-                    VALUES (@name, @brand, @category, @description, @imageUrl, @externalLink, 0, 0, 0, 0, 0)
-                    RETURNING Id";
+                    VALUES (@name, @brand, @category, @description, @imageUrl, @externalLink, @oceanScore, @bioScore, @coralScore, @fishScore, @coverageScore)";
 
-                using var cmd = new SqliteCommand(insertProduct, connection);
+                using var cmd = new MySqlCommand(insertProduct, (MySqlConnection)connection);
                 cmd.Parameters.AddWithValue("@name", product.Name);
                 cmd.Parameters.AddWithValue("@brand", product.Brand);
                 cmd.Parameters.AddWithValue("@category", product.Category);
                 cmd.Parameters.AddWithValue("@description", product.Description);
                 cmd.Parameters.AddWithValue("@imageUrl", product.ImageUrl);
                 cmd.Parameters.AddWithValue("@externalLink", product.ExternalLink);
+                cmd.Parameters.AddWithValue("@oceanScore", oceanScore);
+                cmd.Parameters.AddWithValue("@bioScore", bioScore);
+                cmd.Parameters.AddWithValue("@coralScore", coralScore);
+                cmd.Parameters.AddWithValue("@fishScore", fishScore);
+                cmd.Parameters.AddWithValue("@coverageScore", coverageScore);
 
-                var productId = Convert.ToInt32(await cmd.ExecuteScalarAsync());
+                await cmd.ExecuteNonQueryAsync();
+                var productId = Convert.ToInt32(cmd.LastInsertedId);
 
                 // Link ingredients
                 foreach (var ingredientName in product.IngredientNames)
                 {
                     var getIngredientId = "SELECT Id FROM Ingredients WHERE Name = @name";
-                    using var getCmd = new SqliteCommand(getIngredientId, connection);
+                    using var getCmd = new MySqlCommand(getIngredientId, (MySqlConnection)connection);
                     getCmd.Parameters.AddWithValue("@name", ingredientName);
                     
                     var ingredientId = await getCmd.ExecuteScalarAsync();
                     if (ingredientId != null)
                     {
                         var linkIngredient = "INSERT INTO ProductIngredients (ProductId, IngredientId) VALUES (@productId, @ingredientId)";
-                        using var linkCmd = new SqliteCommand(linkIngredient, connection);
+                        using var linkCmd = new MySqlCommand(linkIngredient, (MySqlConnection)connection);
                         linkCmd.Parameters.AddWithValue("@productId", productId);
                         linkCmd.Parameters.AddWithValue("@ingredientId", ingredientId);
                         await linkCmd.ExecuteNonQueryAsync();
                     }
                 }
             }
+        }
+
+        private async Task SeedUserFavoritesAsync(IDbConnection connection)
+        {
+            // Check if favorites already exist
+            var checkFavorites = "SELECT COUNT(*) FROM UserFavorites";
+            using var checkCmd = new MySqlCommand(checkFavorites, (MySqlConnection)connection);
+            var favoritesCount = Convert.ToInt32(await checkCmd.ExecuteScalarAsync());
+
+            if (favoritesCount > 0)
+            {
+                return; // Favorites already seeded
+            }
+
+            // Get some user IDs and product IDs
+            var getUserIds = "SELECT Id FROM Users WHERE IsAdmin = 0 LIMIT 5";
+            var getProductIds = "SELECT Id FROM Products LIMIT 10";
+
+            using var userCmd = new MySqlCommand(getUserIds, (MySqlConnection)connection);
+            using var productCmd = new MySqlCommand(getProductIds, (MySqlConnection)connection);
+
+            var userIds = new List<int>();
+            var productIds = new List<int>();
+
+            using var userReader = await userCmd.ExecuteReaderAsync();
+            while (await userReader.ReadAsync())
+            {
+                userIds.Add(userReader.GetInt32(userReader.GetOrdinal("Id")));
+            }
+            userReader.Close();
+
+            using var productReader = await productCmd.ExecuteReaderAsync();
+            while (await productReader.ReadAsync())
+            {
+                productIds.Add(productReader.GetInt32(productReader.GetOrdinal("Id")));
+            }
+            productReader.Close();
+
+            // Create some random favorites
+            var random = new Random();
+            var insertFavorite = "INSERT INTO UserFavorites (UserId, ProductId) VALUES (@userId, @productId)";
+
+            foreach (var userId in userIds)
+            {
+                // Each user favorites 2-4 random products
+                var numFavorites = random.Next(2, 5);
+                var userProductIds = productIds.OrderBy(x => random.Next()).Take(numFavorites);
+
+                foreach (var productId in userProductIds)
+                {
+                    using var cmd = new MySqlCommand(insertFavorite, (MySqlConnection)connection);
+                    cmd.Parameters.AddWithValue("@userId", userId);
+                    cmd.Parameters.AddWithValue("@productId", productId);
+                    await cmd.ExecuteNonQueryAsync();
+                }
+            }
+        }
+
+        private async Task SeedAnalyticsAsync(IDbConnection connection)
+        {
+            // Check if analytics already exist
+            var checkAnalytics = "SELECT COUNT(*) FROM AnalyticsLog";
+            using var checkCmd = new MySqlCommand(checkAnalytics, (MySqlConnection)connection);
+            var analyticsCount = Convert.ToInt32(await checkCmd.ExecuteScalarAsync());
+
+            if (analyticsCount > 0)
+            {
+                return; // Analytics already seeded
+            }
+
+            // Get some user IDs and product IDs
+            var getUserIds = "SELECT Id FROM Users LIMIT 8";
+            var getProductIds = "SELECT Id FROM Products LIMIT 15";
+
+            using var userCmd = new MySqlCommand(getUserIds, (MySqlConnection)connection);
+            using var productCmd = new MySqlCommand(getProductIds, (MySqlConnection)connection);
+
+            var userIds = new List<int>();
+            var productIds = new List<int>();
+
+            using var userReader = await userCmd.ExecuteReaderAsync();
+            while (await userReader.ReadAsync())
+            {
+                userIds.Add(userReader.GetInt32(userReader.GetOrdinal("Id")));
+            }
+            userReader.Close();
+
+            using var productReader = await productCmd.ExecuteReaderAsync();
+            while (await productReader.ReadAsync())
+            {
+                productIds.Add(productReader.GetInt32(productReader.GetOrdinal("Id")));
+            }
+            productReader.Close();
+
+            // Create some random analytics data
+            var random = new Random();
+            var actions = new[] { "view", "search", "favorite", "share", "compare" };
+            var insertAnalytics = "INSERT INTO AnalyticsLog (UserId, ProductId, Action, Timestamp) VALUES (@userId, @productId, @action, @timestamp)";
+
+            // Generate 50 random analytics entries
+            for (int i = 0; i < 50; i++)
+            {
+                var userId = userIds[random.Next(userIds.Count)];
+                var productId = productIds[random.Next(productIds.Count)];
+                var action = actions[random.Next(actions.Length)];
+                var timestamp = DateTime.Now.AddDays(-random.Next(30)); // Random time in last 30 days
+
+                using var cmd = new MySqlCommand(insertAnalytics, (MySqlConnection)connection);
+                cmd.Parameters.AddWithValue("@userId", userId);
+                cmd.Parameters.AddWithValue("@productId", productId);
+                cmd.Parameters.AddWithValue("@action", action);
+                cmd.Parameters.AddWithValue("@timestamp", timestamp);
+                await cmd.ExecuteNonQueryAsync();
+            }
+        }
+
+        private (int oceanScore, int bioScore, int coralScore, int fishScore, int coverageScore) CalculateProductScores(string[] ingredientNames, IDbConnection connection)
+        {
+            var totalBioScore = 0;
+            var totalCoralScore = 0;
+            var totalFishScore = 0;
+            var totalCoverageScore = 0;
+            var ingredientCount = 0;
+
+            foreach (var ingredientName in ingredientNames)
+            {
+                var getIngredientScores = "SELECT BiodegradabilityScore, CoralSafetyScore, FishSafetyScore, CoverageScore FROM Ingredients WHERE Name = @name";
+                using var cmd = new MySqlCommand(getIngredientScores, (MySqlConnection)connection);
+                cmd.Parameters.AddWithValue("@name", ingredientName);
+                
+                using var reader = cmd.ExecuteReader();
+                if (reader.Read())
+                {
+                    totalBioScore += reader.GetInt32(reader.GetOrdinal("BiodegradabilityScore"));
+                    totalCoralScore += reader.GetInt32(reader.GetOrdinal("CoralSafetyScore"));
+                    totalFishScore += reader.GetInt32(reader.GetOrdinal("FishSafetyScore"));
+                    totalCoverageScore += reader.GetInt32(reader.GetOrdinal("CoverageScore"));
+                    ingredientCount++;
+                }
+                reader.Close();
+            }
+
+            if (ingredientCount == 0)
+            {
+                return (50, 50, 50, 50, 50); // Default scores if no ingredients found
+            }
+
+            var avgBioScore = Math.Max(1, Math.Min(100, totalBioScore / ingredientCount));
+            var avgCoralScore = Math.Max(1, Math.Min(100, totalCoralScore / ingredientCount));
+            var avgFishScore = Math.Max(1, Math.Min(100, totalFishScore / ingredientCount));
+            var avgCoverageScore = Math.Max(1, Math.Min(100, totalCoverageScore / ingredientCount));
+
+            // Calculate overall ocean score (weighted average)
+            var oceanScore = Math.Max(1, Math.Min(100, (int)(avgBioScore * 0.3 + avgCoralScore * 0.3 + avgFishScore * 0.25 + avgCoverageScore * 0.15)));
+
+            return (oceanScore, avgBioScore, avgCoralScore, avgFishScore, avgCoverageScore);
         }
     }
 }

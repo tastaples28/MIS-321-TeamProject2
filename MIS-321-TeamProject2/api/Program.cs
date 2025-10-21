@@ -2,6 +2,9 @@ using OceanFriendlyProductFinder.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Configure to use port 5001 to avoid conflict with macOS AirPlay
+builder.WebHost.UseUrls("http://localhost:5001");
+
 // Add services to the container.
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();

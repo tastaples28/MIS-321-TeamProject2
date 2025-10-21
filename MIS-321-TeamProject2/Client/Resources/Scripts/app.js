@@ -1,10 +1,8 @@
 // API Configuration
-const API_BASE = 'https://localhost:7001/api'; // Update this to match your API port
+const API_BASE = 'http://localhost:5001/api'; // Updated to match your API port
 
 // Global variables
-let currentUser = null;
 let currentProductId = null;
-let favorites = [];
 let currentPage = 1;
 let totalPages = 1;
 
@@ -985,13 +983,14 @@ function showError(message) {
 
 async function logAnalytics(action, productId = null, metadata = null) {
   try {
+    const currentUser = getCurrentUser();
     await fetch(`${API_BASE}/analytics/log`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        userId: null,
+        userId: currentUser ? currentUser.id : null,
         productId: productId,
         action: action
       })
