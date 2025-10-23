@@ -1046,23 +1046,27 @@
 
         // Initialize
         window.onload = function() {
-            checkAuth();
-            loadFavorites();
-            displayProducts();
-            updateFavoriteCount();
+            // Wait for user-auth.js to load and initialize
+            setTimeout(() => {
+                checkAuth();
+                loadFavorites();
+                displayProducts();
+                updateFavoriteCount();
+            }, 100);
         };
 
         function checkAuth() {
-            const isLoggedIn = localStorage.getItem('isLoggedIn');
-            if (!isLoggedIn) {
+            // Use the user-auth.js functions
+            if (!isUserLoggedIn()) {
                 window.location.href = 'login.html';
                 return;
             }
             
-            const userName = localStorage.getItem('userName');
-            const userEmail = localStorage.getItem('userEmail');
-            const greeting = userName ? `Welcome, ${userName.split(' ')[0]}!` : `Welcome, ${userEmail.split('@')[0]}!`;
-            document.getElementById('userGreeting').textContent = greeting;
+            // Update user greeting using the current user from user-auth.js
+            const user = getCurrentUser();
+            if (user && document.getElementById('userGreeting')) {
+                document.getElementById('userGreeting').textContent = `Welcome back, ${user.username}!`;
+            }
         }
 
         function loadFavorites() {
@@ -1396,25 +1400,6 @@
         });
     </script>
     <script src="Resources/Scripts/user-auth.js"></script>
-    <script>
-        // Initialize user authentication when page loads
-        document.addEventListener('DOMContentLoaded', function() {
-            // Check if user is logged in
-            if (!isUserLoggedIn()) {
-                // Redirect to login if not logged in
-                window.location.href = 'login.html';
-                return;
-            }
-            
-            // Update user greeting
-            const user = getCurrentUser();
-            if (user) {
-                document.getElementById('userGreeting').textContent = `Welcome back, ${user.username}!`;
-            }
-            
-            // Load user's favorites
-            loadUserFavorites();
-        });
         
         // Override the showFavorites function to use API
         function showFavorites() {
