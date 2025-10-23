@@ -32,7 +32,14 @@ async function registerUser(username, email, password, sensitivityPreferences = 
             })
         });
 
-        const data = await response.json();
+        let data;
+        try {
+            data = await response.json();
+        } catch (error) {
+            // If response is not JSON, get text instead
+            const text = await response.text();
+            return { success: false, message: text || 'Registration failed' };
+        }
 
         if (response.ok && data.success) {
             currentUser = data.user;
@@ -62,7 +69,14 @@ async function loginUser(username, password) {
             })
         });
 
-        const data = await response.json();
+        let data;
+        try {
+            data = await response.json();
+        } catch (error) {
+            // If response is not JSON, get text instead
+            const text = await response.text();
+            return { success: false, message: text || 'Login failed' };
+        }
 
         if (response.ok && data.success) {
             currentUser = data.user;

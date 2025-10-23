@@ -113,7 +113,12 @@ namespace OceanFriendlyProductFinder.Controllers
         {
             if (string.IsNullOrWhiteSpace(request.Username) || string.IsNullOrWhiteSpace(request.Password))
             {
-                return BadRequest("Username and password are required");
+                return BadRequest(new UserLoginResponse
+                {
+                    Success = false,
+                    Message = "Username and password are required",
+                    User = null
+                });
             }
 
             using var connection = _databaseService.GetConnection();
@@ -155,11 +160,21 @@ namespace OceanFriendlyProductFinder.Controllers
                     }
                 }
 
-                return Unauthorized("Invalid username or password");
+                return Unauthorized(new UserLoginResponse
+                {
+                    Success = false,
+                    Message = "Invalid username or password",
+                    User = null
+                });
             }
             catch (Exception ex)
             {
-                return BadRequest($"Login failed: {ex.Message}");
+                return BadRequest(new UserLoginResponse
+                {
+                    Success = false,
+                    Message = $"Login failed: {ex.Message}",
+                    User = null
+                });
             }
         }
 
