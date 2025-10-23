@@ -178,29 +178,6 @@ namespace OceanFriendlyProductFinder.Controllers
             }
         }
 
-        [HttpPost("update-admin-password")]
-        public async Task<ActionResult> UpdateAdminPassword()
-        {
-            using var connection = _databaseService.GetConnection();
-            connection.Open();
-
-            try
-            {
-                var hashedPassword = BCrypt.Net.BCrypt.HashPassword("admin123");
-                var updateQuery = "UPDATE Users SET PasswordHash = @passwordHash WHERE Username = 'admin'";
-
-                using var cmd = new MySqlCommand(updateQuery, (MySqlConnection)connection);
-                cmd.Parameters.AddWithValue("@passwordHash", hashedPassword);
-                var rowsAffected = await cmd.ExecuteNonQueryAsync();
-
-                return Ok(new { message = $"Updated {rowsAffected} admin user(s) with new password hash" });
-            }
-            catch (Exception ex)
-            {
-                return BadRequest($"Failed to update admin password: {ex.Message}");
-            }
-        }
-
         [HttpGet("profile/{id}")]
         public async Task<ActionResult<User>> GetUserProfile(int id)
         {
