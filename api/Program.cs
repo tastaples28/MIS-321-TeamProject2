@@ -4,7 +4,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Configure to use Heroku's PORT environment variable
 var port = Environment.GetEnvironmentVariable("PORT") ?? "5001";
-builder.WebHost.UseUrls($"http://0.0.0.0:{3306}");
+builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
 
 // Add services to the container.
 builder.Services.AddControllers();
