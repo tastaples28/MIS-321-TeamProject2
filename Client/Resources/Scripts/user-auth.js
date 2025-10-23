@@ -37,7 +37,8 @@ async function registerUser(username, email, password, sensitivityPreferences = 
             data = await response.json();
         } catch (error) {
             // If response is not JSON, get text instead
-            const text = await response.text();
+            const responseClone = response.clone();
+            const text = await responseClone.text();
             return { success: false, message: text || 'Registration failed' };
         }
 
@@ -74,7 +75,8 @@ async function loginUser(username, password) {
             data = await response.json();
         } catch (error) {
             // If response is not JSON, get text instead
-            const text = await response.text();
+            const responseClone = response.clone();
+            const text = await responseClone.text();
             return { success: false, message: text || 'Login failed' };
         }
 
