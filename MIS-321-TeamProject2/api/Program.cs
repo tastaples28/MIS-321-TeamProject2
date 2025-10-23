@@ -44,6 +44,22 @@ if (app.Environment.IsDevelopment())
 
 app.UseCors("AllowAll");
 app.UseHttpsRedirection();
+
+// Serve static files from the Client directory
+var clientPath = Path.Combine(Directory.GetCurrentDirectory(), "..", "Client");
+Console.WriteLine($"Serving static files from: {clientPath}");
+
+app.UseDefaultFiles(new DefaultFilesOptions
+{
+    FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(clientPath),
+    RequestPath = ""
+});
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(clientPath),
+    RequestPath = ""
+});
+
 app.UseAuthorization();
 app.MapControllers();
 
