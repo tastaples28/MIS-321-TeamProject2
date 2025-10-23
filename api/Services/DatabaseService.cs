@@ -1,5 +1,6 @@
 using MySql.Data.MySqlClient;
 using System.Data;
+using BCrypt.Net;
 
 namespace OceanFriendlyProductFinder.Services
 {
@@ -173,9 +174,10 @@ namespace OceanFriendlyProductFinder.Services
             {
                 var insertAdmin = @"
                     INSERT INTO Users (Username, Email, PasswordHash, IsAdmin)
-                    VALUES ('admin', 'admin@oceanfriendly.com', 'admin123', 1)";
+                    VALUES ('admin', 'admin@oceanfriendly.com', @passwordHash, 1)";
                 
                 using var insertCmd = new MySqlCommand(insertAdmin, (MySqlConnection)connection);
+                insertCmd.Parameters.AddWithValue("@passwordHash", BCrypt.Net.BCrypt.HashPassword("admin123"));
                 insertCmd.ExecuteNonQuery();
             }
         }
