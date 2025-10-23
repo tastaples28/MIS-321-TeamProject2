@@ -2,8 +2,9 @@ using OceanFriendlyProductFinder.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Configure to use port 5001 to avoid conflict with macOS AirPlay
-builder.WebHost.UseUrls("http://localhost:5001");
+// Configure to use Heroku's PORT environment variable
+var port = Environment.GetEnvironmentVariable("PORT") ?? "5001";
+builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
 
 // Add services to the container.
 builder.Services.AddControllers();

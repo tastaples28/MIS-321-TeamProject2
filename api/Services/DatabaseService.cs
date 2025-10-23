@@ -9,7 +9,40 @@ namespace OceanFriendlyProductFinder.Services
 
         public DatabaseService(IConfiguration configuration)
         {
-            _connectionString = configuration.GetConnectionString("DefaultConnection") ?? throw new ArgumentNullException("Connection string not found");
+            var connectionString = configuration.GetConnectionString("DefaultConnection");
+            
+            // Handle Heroku's connection string format
+            if (string.IsNullOrEmpty(connectionString))
+            {
+                // Try to get from environment variable (Heroku style)
+                connectionString = Environment.GetEnvironmentVariable("CLEARDB_DATABASE_URL") 
+                                  ?? Environment.GetEnvironmentVariable("JAWSDB_URL");
+                
+                if (!string.IsNullOrEmpty(connectionString))
+                {
+                    // Parse Heroku connection string format
+                    var uri = new Uri(connectionString);
+                    var connectionStringBuilder = new MySqlConnectionStringBuilder
+                    {
+                        Server = uri.Host,
+                        Port = (uint)uri.Port,
+                        Database = uri.AbsolutePath.TrimStart('/'),
+                        UserID = uri.UserInfo.Split(':')[0],
+                        Password = uri.UserInfo.Split(':')[1],
+                        SslMode = MySqlSslMode.Required
+                    };
+                    _connectionString = connectionStringBuilder.ToString();
+                }
+                else
+                {
+                    throw new ArgumentNullException("Connection string not found");
+                }
+            }
+            else
+            {
+                _connectionString = connectionString;
+            }
+            
             // Initialize database synchronously to ensure tables are created before seeding
             InitializeDatabase().Wait();
         }
