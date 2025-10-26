@@ -262,7 +262,7 @@ function renderUsersTable() {
     const tbody = document.getElementById('users-table-body');
     
     if (!users || users.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" class="text-center">No users found</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="4" class="text-center">No users found</td></tr>';
         return;
     }
     
@@ -273,20 +273,15 @@ function renderUsersTable() {
         const name = user.username || user.name || 'N/A';
         const email = user.email || 'N/A';
         const role = user.isAdmin ? 'Admin' : 'User';
-        const status = 'Active'; // API doesn't have status field
         
         return `
         <tr>
             <td><strong>${name}</strong></td>
             <td>${email}</td>
             <td><span class="role-badge role-${role.toLowerCase()}">${role}</span></td>
-            <td><span class="status-badge status-${status.toLowerCase()}">${status}</span></td>
             <td>
                 <button class="btn-admin btn-admin-primary" onclick="editUser(${user.id})">
                     <i class="fas fa-edit"></i>
-                </button>
-                <button class="btn-admin btn-admin-warning" onclick="toggleUserStatus(${user.id})">
-                    <i class="fas fa-power-off"></i>
                 </button>
                 <button class="btn-admin btn-admin-danger" onclick="deleteUser(${user.id})">
                     <i class="fas fa-trash"></i>
@@ -313,7 +308,6 @@ function editUser(id) {
     document.getElementById('user-name').value = user.username || user.name || '';
     document.getElementById('user-email').value = user.email || '';
     document.getElementById('user-role').value = user.isAdmin ? 'Admin' : 'User';
-    document.getElementById('user-status').value = 'Active';
     document.getElementById('user-modal').classList.add('show');
 }
 
@@ -332,14 +326,14 @@ async function saveUser(event) {
             const response = await fetch(`${API_BASE}/admin/users/${id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    username: username,
-                    email: email,
-                    password: password,
+            body: JSON.stringify({
+                username: username,
+                email: email,
+                password: password,
                     sensitivityPreferences: null
-                })
-            });
-            
+            })
+        });
+        
             if (!response.ok) {
                 const error = await response.text();
                 alert(`Failed to update user: ${error}`);
