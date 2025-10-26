@@ -1048,33 +1048,29 @@
                 return;
             }
             
-            const favorites = getFavorites();
-            const isFavorited = favorites.includes(productId);
-            
-            // Instant UI update with smooth animation
-            const icon = document.querySelector(`[data-product-id="${productId}"] .favorite-icon`);
-            if (icon) {
-                icon.classList.toggle('favorited');
-                // Add animation
-                icon.style.transform = 'scale(1.3)';
-                setTimeout(() => { icon.style.transform = 'scale(1)'; }, 200);
-            }
-            
-            // Update localStorage immediately
-            if (isFavorited) {
-                await removeFromFavoritesLocal(productId);
-            } else {
-                await addToFavoritesLocal(productId);
-            }
-            
-            // Update UI
-            updateFavoriteCount();
-            displayProducts();
-            
-            // If favorites modal is open, refresh it
-            const favoritesModal = document.getElementById('favoritesModal');
-            if (favoritesModal && favoritesModal.classList.contains('show')) {
-                displayFavoritesModal();
+            try {
+                const favorites = getFavorites();
+                const isFavorited = favorites.includes(productId);
+                
+                // Update localStorage immediately for instant feedback
+                if (isFavorited) {
+                    await removeFromFavoritesLocal(productId);
+                } else {
+                    await addToFavoritesLocal(productId);
+                }
+                
+                // Update UI immediately - re-render products to show updated heart state
+                updateFavoriteCount();
+                displayProducts();
+                
+                // If favorites modal is open, refresh it
+                const favoritesModal = document.getElementById('favoritesModal');
+                if (favoritesModal && favoritesModal.classList.contains('show')) {
+                    displayFavoritesModal();
+                }
+            } catch (error) {
+                console.error('Error toggling favorite:', error);
+                alert('Failed to update favorite. Please try again.');
             }
         }
 
