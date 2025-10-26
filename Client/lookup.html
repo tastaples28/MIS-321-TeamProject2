@@ -890,10 +890,24 @@
         // Load products from API
         async function loadProductsFromAPI() {
             try {
-                const response = await fetch(`${window.API_BASE}/products`);
+                const response = await fetch(`${window.API_BASE}/products?pageSize=100`);
                 if (response.ok) {
                     const data = await response.json();
-                    productsDatabase = data.products || [];
+                    const apiProducts = data.Products || data.products || [];
+                    
+                    // Map API format to our expected format
+                    productsDatabase = apiProducts.map(p => ({
+                        id: p.Id || p.id,
+                        name: p.Name || p.name,
+                        category: p.Category || p.category,
+                        brand: p.Brand || p.brand,
+                        description: p.Description || p.description,
+                        imageUrl: p.ImageUrl || p.imageUrl,
+                        oceanScore: p.OceanScore || p.oceanScore,
+                        score: p.OceanScore || p.oceanScore, // Alias for compatibility
+                        reason: p.Description || p.description || 'No description available',
+                        ingredients: p.Ingredients || p.ingredients || []
+                    }));
                 } else {
                     console.error('Failed to load products from API');
                 }
@@ -1230,15 +1244,18 @@
             
             // Ingredients section
             const ingredientsSection = document.getElementById('detailIngredientsSection');
-            if (product.harmfulIngredients.length > 0) {
+            const harmfulIngredients = product.ingredients ? product.ingredients.filter(ing => !ing.isReefSafe) : [];
+            const safeIngredients = product.ingredients ? product.ingredients.filter(ing => ing.isReefSafe) : [];
+            
+            if (harmfulIngredients.length > 0) {
                 ingredientsSection.innerHTML = `
                     <div class="detail-ingredients-title" style="color: #dc2626;">
                         <i class="fas fa-exclamation-triangle"></i>
                         <span>Harmful Ingredients Detected</span>
                     </div>
                     <div>
-                        ${product.harmfulIngredients.map(ing => 
-                            `<span class="detail-ingredient-tag ingredient-harmful">${ing}</span>`
+                        ${harmfulIngredients.map(ing => 
+                            `<span class="detail-ingredient-tag ingredient-harmful">${ing.name || ing}</span>`
                         ).join('')}
                     </div>
                     <p style="margin-top: 15px; color: #64748b; line-height: 1.6;">
@@ -1248,15 +1265,15 @@
                 `;
                 ingredientsSection.style.background = 'rgba(248, 113, 113, 0.05)';
                 ingredientsSection.style.borderLeft = '4px solid var(--coral-pink)';
-            } else {
+            } else if (safeIngredients.length > 0) {
                 ingredientsSection.innerHTML = `
                     <div class="detail-ingredients-title" style="color: #059669;">
                         <i class="fas fa-leaf"></i>
                         <span>Safe Ingredients</span>
                     </div>
                     <div>
-                        ${product.ingredients.map(ing => 
-                            `<span class="detail-ingredient-tag ingredient-safe">${ing}</span>`
+                        ${safeIngredients.map(ing => 
+                            `<span class="detail-ingredient-tag ingredient-safe">${ing.name || ing}</span>`
                         ).join('')}
                     </div>
                     <p style="margin-top: 15px; color: #64748b; line-height: 1.6;">
@@ -1266,6 +1283,14 @@
                 `;
                 ingredientsSection.style.background = 'rgba(16, 185, 129, 0.05)';
                 ingredientsSection.style.borderLeft = '4px solid var(--sea-green)';
+            } else {
+                ingredientsSection.innerHTML = `
+                    <p style="color: #64748b; line-height: 1.6; text-align: center;">
+                        No ingredient information available for this product.
+                    </p>
+                `;
+                ingredientsSection.style.background = 'transparent';
+                ingredientsSection.style.borderLeft = 'none';
             }
             
             // Favorite button
