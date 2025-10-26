@@ -1019,13 +1019,9 @@
                     }
                 }
                 
-                // Update UI
-                const icon = document.querySelector(`[data-product-id="${productId}"] .favorite-icon`);
-                if (icon) {
-                    icon.classList.toggle('favorited');
-                }
-                
+                // Update UI - re-render products to reflect favorite state
                 updateFavoriteCount();
+                displayProducts();
             } catch (error) {
                 console.error('Error toggling favorite:', error);
                 alert('Failed to update favorite');
