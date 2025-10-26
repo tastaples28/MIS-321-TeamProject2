@@ -1042,6 +1042,7 @@
 
         // Enhanced toggle favorite with instant UI updates
         async function toggleFavorite(productId) {
+            console.log('toggleFavorite called for product:', productId);
             const user = getCurrentUser();
             if (!user) {
                 alert('Please log in to add favorites');
@@ -1049,32 +1050,50 @@
             }
             
             const favorites = getFavorites();
+            console.log('Current favorites:', favorites);
             const isFavorited = favorites.includes(productId);
+            console.log('Is favorited?', isFavorited);
+            
+            // Update localStorage FIRST for instant feedback
+            let newFavorites;
+            if (isFavorited) {
+                console.log('Removing from favorites');
+                newFavorites = favorites.filter(id => id !== productId);
+                saveFavorites(newFavorites);
+                // Sync to API in background
+                syncFavoritesToAPI(productId, false).catch(console.error);
+            } else {
+                console.log('Adding to favorites');
+                newFavorites = [...favorites, productId];
+                saveFavorites(newFavorites);
+                // Sync to API in background
+                syncFavoritesToAPI(productId, true).catch(console.error);
+            }
+            
+            console.log('New favorites:', newFavorites);
             
             // Instant visual feedback with animation - NO PAGE REFRESH
             const icon = document.querySelector(`[data-product-id="${productId}"] .favorite-icon`);
+            console.log('Icon element:', icon);
             if (icon) {
-                // Immediately toggle the visual state
+                // Immediately toggle the visual state based on NEW state
                 if (isFavorited) {
                     icon.classList.remove('favorited');
+                    console.log('Removed favorited class');
                 } else {
                     icon.classList.add('favorited');
+                    console.log('Added favorited class');
                 }
                 
                 // Add animation
+                icon.style.transition = 'transform 0.2s ease';
                 icon.style.transform = 'scale(1.3)';
                 setTimeout(() => { icon.style.transform = 'scale(1)'; }, 200);
             }
             
-            // Update localStorage immediately
-            if (isFavorited) {
-                await removeFromFavoritesLocal(productId);
-            } else {
-                await addToFavoritesLocal(productId);
-            }
-            
             // Update count instantly
             updateFavoriteCount();
+            console.log('Updated favorite count');
             
             // Update favorites modal if open (without re-rendering product grid)
             const favoritesModal = document.getElementById('favoritesModal');
