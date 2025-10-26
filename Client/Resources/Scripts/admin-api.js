@@ -148,9 +148,9 @@ async function saveUsers() {
 }
 
 async function saveProducts() {
-    // Note: Product save is managed directly in the database by admin users
-    // Changes are saved in local memory only for this admin session
-    console.log('Products saved to local memory (not persisted to database)');
+    // Products are saved individually via API, not as a bulk operation
+    // This function is a placeholder and not used
+    console.log('Products are saved individually via API on create/update');
     return;
 }
 
@@ -442,24 +442,45 @@ async function saveProduct(event) {
     const reason = document.getElementById('product-reason').value;
     
     if (id) {
-        // Update existing product
+        // Update existing product - for now just update local data
         const productIndex = products.findIndex(p => p.id === parseInt(id));
         products[productIndex] = { id: parseInt(id), name, category, score, harmfulIngredients, image, reason };
+        await loadProductsFromAPI(); // Reload from API
+        renderProductsTable();
+        closeProductModal();
     } else {
-        // Add new product
-        const newId = products.length > 0 ? Math.max(...products.map(p => p.id)) + 1 : 1;
-        products.push({ id: newId, name, category, score, harmfulIngredients, image, reason });
-        
-        // Add to analytics
-        analytics.searchCounts[name] = 0;
-        analytics.favorites[name] = 0;
-        analytics.clicks[name] = 0;
+        // Add new product via API
+        try {
+            const brand = category; // Use category as brand for now
+            const response = await fetch(`${API_BASE}/products`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    name: name,
+                    brand: brand,
+                    category: category,
+                    description: reason || null,
+                    imageUrl: image || null,
+                    externalLink: null,
+                    ingredientIds: [] // No ingredients for now
+                })
+            });
+            
+            if (response.ok) {
+                await loadProductsFromAPI(); // Reload from API to get the new product
+                renderProductsTable();
+                alert('Product added successfully!');
+                closeProductModal();
+            } else {
+                const error = await response.text();
+                alert(`Failed to add product: ${error}`);
+                console.error('Failed to add product:', error);
+            }
+        } catch (error) {
+            console.error('Error adding product:', error);
+            alert('Error adding product. Please try again.');
+        }
     }
-    
-    await saveProducts();
-    await saveAnalytics();
-    renderProductsTable();
-    closeProductModal();
 }
 
 async function deleteProduct(id) {
