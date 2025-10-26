@@ -310,10 +310,10 @@ function editUser(id) {
     
     document.getElementById('user-modal-title').textContent = 'Edit User';
     document.getElementById('user-id').value = user.id;
-    document.getElementById('user-name').value = user.name;
-    document.getElementById('user-email').value = user.email;
-    document.getElementById('user-role').value = user.role;
-    document.getElementById('user-status').value = user.status;
+    document.getElementById('user-name').value = user.username || user.name || '';
+    document.getElementById('user-email').value = user.email || '';
+    document.getElementById('user-role').value = user.isAdmin ? 'Admin' : 'User';
+    document.getElementById('user-status').value = 'Active';
     document.getElementById('user-modal').classList.add('show');
 }
 
@@ -321,24 +321,45 @@ async function saveUser(event) {
     event.preventDefault();
     
     const id = document.getElementById('user-id').value;
-    const name = document.getElementById('user-name').value;
+    const username = document.getElementById('user-name').value;
     const email = document.getElementById('user-email').value;
     const role = document.getElementById('user-role').value;
-    const status = document.getElementById('user-status').value;
+    const password = document.getElementById('user-password')?.value || 'tempPass123'; // Placeholder
     
-    if (id) {
-        // Update existing user
-        const userIndex = users.findIndex(u => u.id === parseInt(id));
-        users[userIndex] = { id: parseInt(id), name, email, role, status };
+    try {
+        if (id) {
+            // Update existing user
+            const response = await fetch(`${API_BASE}/admin/users/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    username: username,
+                    email: email,
+                    password: password,
+                    sensitivityPreferences: null
+                })
+            });
+            
+            if (!response.ok) {
+                const error = await response.text();
+                alert(`Failed to update user: ${error}`);
+                console.error('Failed to update user:', error);
+                return;
+            }
         } else {
-        // Add new user
-        const newId = users.length > 0 ? Math.max(...users.map(u => u.id)) + 1 : 1;
-        users.push({ id: newId, name, email, role, status });
+            // Add new user - for now we'll skip this as it requires a password
+            alert('Creating new users from admin panel requires a password. Please use the signup form.');
+            return;
+        }
+        
+        // Reload users from API
+        await loadUsersFromAPI();
+        renderUsersTable();
+        closeUserModal();
+    } catch (error) {
+        console.error('Error saving user:', error);
+        alert('Error saving user. Please try again.');
     }
-    
-    await saveUsers();
-    renderUsersTable();
-    closeUserModal();
 }
 
 async function toggleUserStatus(id) {
@@ -353,9 +374,26 @@ async function toggleUserStatus(id) {
 async function deleteUser(id) {
     if (!confirm('Are you sure you want to delete this user?')) return;
     
-    users = users.filter(u => u.id !== id);
-    await saveUsers();
-    renderUsersTable();
+    try {
+        const response = await fetch(`${API_BASE}/admin/users/${id}`, {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' }
+        });
+        
+        if (response.ok || response.status === 204) {
+            // Remove from local array
+            users = users.filter(u => u.id !== id);
+            renderUsersTable();
+            console.log('User deleted successfully');
+        } else {
+            const error = await response.text();
+            alert(`Failed to delete user: ${error}`);
+            console.error('Failed to delete user:', error);
+        }
+    } catch (error) {
+        console.error('Error deleting user:', error);
+        alert('Error deleting user. Please try again.');
+    }
 }
 
 function closeUserModal() {
