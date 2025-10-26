@@ -61,7 +61,8 @@ async function loadProductsFromAPI() {
     try {
         const response = await fetch(`${API_BASE}/products`);
         if (response.ok) {
-            const apiProducts = await response.json();
+            const data = await response.json();
+            const apiProducts = data.products || data; // Handle both {products: []} and [] formats
             // Convert API format to our format
             products = apiProducts.map(p => ({
                 id: p.id,
@@ -194,7 +195,7 @@ async function saveAnalytics() {
 }
 
 // Tab Management
-function showAdminTab(tabName) {
+function showAdminTab(tabName, clickedButton) {
     // Hide all tabs
     document.querySelectorAll('.admin-tab-content').forEach(tab => {
         tab.style.display = 'none';
@@ -206,10 +207,16 @@ function showAdminTab(tabName) {
     });
     
     // Show selected tab
-    document.getElementById(tabName + '-tab').style.display = 'block';
+    const tabElement = document.getElementById(tabName + '-tab');
+    if (tabElement) {
+        tabElement.style.display = 'block';
+    }
     
     // Add active class to button
-    event.target.classList.add('active');
+    const buttonElement = clickedButton || document.querySelector(`[onclick*="showAdminTab('${tabName}')"]`);
+    if (buttonElement) {
+        buttonElement.classList.add('active');
+    }
     
     // Load tab data
     switch(tabName) {
