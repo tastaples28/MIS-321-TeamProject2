@@ -97,9 +97,28 @@ async function loadWeightsFromAPI() {
 
 async function loadAnalyticsFromAPI() {
     try {
-        const response = await fetch(`${API_BASE}/admin/analytics`);
+        const response = await fetch(`${API_BASE}/analytics/summary`);
         if (response.ok) {
-            analytics = await response.json();
+            const data = await response.json();
+            // Convert API format to our analytics format
+            analytics = {
+                totalSearches: data.totalSearches || 0,
+                totalViews: data.totalProductViews || 0,
+                totalFavorites: data.totalFavorites || 0,
+                searchCounts: {},
+                favorites: {},
+                clicks: {}
+            };
+            
+            // Populate from topProducts
+            if (data.topProducts && Array.isArray(data.topProducts)) {
+                data.topProducts.forEach(product => {
+                    analytics.searchCounts[product.productName] = product.viewCount || 0;
+                    analytics.favorites[product.productName] = product.favoriteCount || 0;
+                    analytics.clicks[product.productName] = product.viewCount || 0;
+                });
+            }
+            
             return;
         }
     } catch (error) {
