@@ -65,21 +65,32 @@ async function loadProductsFromAPI() {
         const response = await fetch(`${API_BASE}/products`);
         if (response.ok) {
             const data = await response.json();
-            const apiProducts = data.products || data; // Handle both {products: []} and [] formats
+            console.log('API response:', data);
+            
+            // API returns { Products: [...], TotalCount, Page, PageSize }
+            const apiProducts = data.Products || data.products || data; // Handle both formats
+            console.log('Loaded products:', apiProducts);
+            
+            if (!Array.isArray(apiProducts)) {
+                console.error('Products is not an array:', apiProducts);
+                throw new Error('Invalid response format');
+            }
+            
             // Convert API format to our format
             products = apiProducts.map(p => ({
-                id: p.id,
-                name: p.name,
-                category: p.category,
-                score: p.oceanScore,
-                harmfulIngredients: p.harmfulIngredients || [],
-                image: p.imageUrl || `https://placehold.co/400x400/0EA5E9/FFFFFF?text=${encodeURIComponent(p.name.substring(0, 20))}`,
-                reason: p.description || 'No description available'
+                id: p.Id || p.id,
+                name: p.Name || p.name,
+                category: p.Category || p.category,
+                score: p.OceanScore || p.oceanScore || 0,
+                harmfulIngredients: p.HarmfulIngredients || p.harmfulIngredients || [],
+                image: p.ImageUrl || p.imageUrl || `https://placehold.co/400x400/0EA5E9/FFFFFF?text=${encodeURIComponent((p.Name || p.name || '').substring(0, 20))}`,
+                reason: p.Description || p.description || 'No description available'
             }));
+            console.log('Converted products:', products);
             return;
         }
     } catch (error) {
-        console.log('Failed to load products from API:', error);
+        console.error('Failed to load products from API:', error);
     }
     throw new Error('API not available');
 }
