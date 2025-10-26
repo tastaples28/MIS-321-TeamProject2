@@ -911,7 +911,7 @@
                 loadFavorites();
                 displayProducts();
                 updateFavoriteCount();
-            }, 100);
+            }, 500); // Increased timeout to ensure sessionStorage is restored
         };
 
         function checkAuth() {
