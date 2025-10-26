@@ -363,12 +363,10 @@ async function saveUser(event) {
 }
 
 async function toggleUserStatus(id) {
-    const user = users.find(u => u.id === id);
-    if (!user) return;
-    
-    user.status = user.status === 'Active' ? 'Inactive' : 'Active';
-    await saveUsers();
-    renderUsersTable();
+    // Note: User status toggle is not currently supported by the API
+    // The backend doesn't have a status field for users
+    alert('User status toggle is not currently supported. Users are always active in the system.');
+    console.log('toggleUserStatus called for user:', id);
 }
 
 async function deleteUser(id) {
