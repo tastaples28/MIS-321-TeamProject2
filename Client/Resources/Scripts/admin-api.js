@@ -671,7 +671,7 @@ function renderClicksChart() {
         .slice(0, 5);
     
     clicksChart = new Chart(ctx, {
-        type: 'horizontalBar',
+        type: 'bar',
         data: {
             labels: sorted.map(s => s[0].substring(0, 20) + '...'),
             datasets: [{
