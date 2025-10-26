@@ -188,11 +188,11 @@ namespace OceanFriendlyProductFinder.Controllers
 
             try
             {
-                 // Insert product
+                 // Insert product with initial scores set to 1 (will be recalculated)
                  var insertQuery = @"
                      INSERT INTO Products (Name, Brand, Category, Description, ImageUrl, ExternalLink, 
                                          OceanScore, BiodegradabilityScore, CoralSafetyScore, FishSafetyScore, CoverageScore)
-                     VALUES (@name, @brand, @category, @description, @imageUrl, @externalLink, 0, 0, 0, 0, 0)";
+                     VALUES (@name, @brand, @category, @description, @imageUrl, @externalLink, 1, 1, 1, 1, 1)";
 
                 using var cmd = new MySqlCommand(insertQuery, (MySqlConnection)connection, (MySqlTransaction)transaction);
                 cmd.Parameters.AddWithValue("@name", request.Name);
