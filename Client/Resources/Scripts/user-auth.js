@@ -122,14 +122,15 @@ function updateUIForLoggedInUser() {
     // Update login/logout buttons
     const loginButtons = document.querySelectorAll('.login-button');
     const logoutButtons = document.querySelectorAll('.logout-button');
-    const userInfo = document.querySelectorAll('.user-info');
-
+    
     loginButtons.forEach(btn => btn.style.display = 'none');
     logoutButtons.forEach(btn => btn.style.display = 'inline-block');
-    userInfo.forEach(info => {
-        info.style.display = 'block';
-        info.innerHTML = `Welcome, ${currentUser.username}!`;
-    });
+    
+    // Only update greeting if element exists (don't overwrite existing HTML structure)
+    const userGreeting = document.getElementById('userGreeting');
+    if (userGreeting) {
+        userGreeting.textContent = `Welcome back, ${currentUser.username}!`;
+    }
 
     // Show user-specific features
     const favoriteButtons = document.querySelectorAll('.favorite-button');
@@ -144,14 +145,11 @@ function updateUIForLoggedOutUser() {
     // Update login/logout buttons
     const loginButtons = document.querySelectorAll('.login-button');
     const logoutButtons = document.querySelectorAll('.logout-button');
-    const userInfo = document.querySelectorAll('.user-info');
 
     loginButtons.forEach(btn => btn.style.display = 'inline-block');
     logoutButtons.forEach(btn => btn.style.display = 'none');
-    userInfo.forEach(info => {
-        info.style.display = 'none';
-        info.innerHTML = '';
-    });
+    
+    // Don't modify user-info elements that have their own structure (like lookup.html)
 
     // Hide user-specific features
     const favoriteButtons = document.querySelectorAll('.favorite-button');
