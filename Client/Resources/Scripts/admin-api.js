@@ -148,17 +148,10 @@ async function saveUsers() {
 }
 
 async function saveProducts() {
-    try {
-        const response = await fetch(`${API_BASE}/products`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(products)
-        });
-        if (response.ok) return;
-    } catch (error) {
-        console.error('Failed to save products to API:', error);
-        alert('Failed to save products. Please try again.');
-    }
+    // Note: Product save is managed directly in the database by admin users
+    // Changes are saved in local memory only for this admin session
+    console.log('Products saved to local memory (not persisted to database)');
+    return;
 }
 
 async function saveWeights() {
@@ -203,17 +196,10 @@ async function saveWeights() {
 }
 
 async function saveAnalytics() {
-    try {
-        const response = await fetch(`${API_BASE}/admin/analytics`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(analytics)
-        });
-        if (response.ok) return;
-    } catch (error) {
-        console.error('Failed to save analytics to API:', error);
-        alert('Failed to save analytics. Please try again.');
-    }
+    // Note: Analytics are automatically logged to the database by user actions
+    // Changes are saved in local memory only for this admin session
+    console.log('Analytics saved to local memory (not persisted to database)');
+    return;
 }
 
 // Tab Management
