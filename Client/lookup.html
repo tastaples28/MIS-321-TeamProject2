@@ -1051,26 +1051,32 @@
             const favorites = getFavorites();
             const isFavorited = favorites.includes(productId);
             
-            // Instant visual feedback with animation
+            // Instant visual feedback with animation - NO PAGE REFRESH
             const icon = document.querySelector(`[data-product-id="${productId}"] .favorite-icon`);
             if (icon) {
-                icon.classList.toggle('favorited');
+                // Immediately toggle the visual state
+                if (isFavorited) {
+                    icon.classList.remove('favorited');
+                } else {
+                    icon.classList.add('favorited');
+                }
+                
+                // Add animation
                 icon.style.transform = 'scale(1.3)';
                 setTimeout(() => { icon.style.transform = 'scale(1)'; }, 200);
             }
             
-            // Update localStorage immediately for instant feedback
+            // Update localStorage immediately
             if (isFavorited) {
                 await removeFromFavoritesLocal(productId);
             } else {
                 await addToFavoritesLocal(productId);
             }
             
-            // Update UI
+            // Update count instantly
             updateFavoriteCount();
-            displayProducts();
             
-            // If favorites modal is open, refresh it
+            // Update favorites modal if open (without re-rendering product grid)
             const favoritesModal = document.getElementById('favoritesModal');
             if (favoritesModal && favoritesModal.classList.contains('show')) {
                 displayFavoritesModal();
