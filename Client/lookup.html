@@ -904,14 +904,24 @@
 
         // Initialize
         window.onload = async function() {
-            // Wait for user-auth.js to load and initialize
+            // Wait for user-auth.js to load and initialize, then restore session
             setTimeout(async () => {
+                // Check if user is stored in sessionStorage and restore it
+                const savedUser = sessionStorage.getItem('currentUser');
+                if (savedUser) {
+                    // Restore user to user-auth.js global variable
+                    if (typeof currentUser === 'undefined') {
+                        window.currentUser = JSON.parse(savedUser);
+                    }
+                }
+                
+                // Now check authentication
                 checkAuth();
                 await loadProductsFromAPI();
                 loadFavorites();
                 displayProducts();
                 updateFavoriteCount();
-            }, 500); // Increased timeout to ensure sessionStorage is restored
+            }, 500);
         };
 
         function checkAuth() {
