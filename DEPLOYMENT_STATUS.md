@@ -73,13 +73,24 @@ git push heroku-reefrates main
 - ✅ Ocean Score Calculation
 
 ## 📊 Database Tables
-- Users
-- Products
-- Ingredients
-- ProductIngredients (junction)
-- UserFavorites
-- AnalyticsLog
-- OceanScoreWeights
+- **Users** - All user accounts (registration and login)
+- **Products** - Product information
+- **Ingredients** - Ingredient information
+- **ProductIngredients** - Junction table linking products to ingredients
+- **UserFavorites** - User favorite products
+- **AnalyticsLog** - User analytics data
+- **OceanScoreWeights** - Ocean score calculation weights
+
+## 💾 Data Persistence
+All data is now saved to **JawsDB MySQL** database on Heroku:
+- ✅ **User Registration** - New users are saved to the database
+- ✅ **User Login** - Authenticated against database
+- ✅ **User Favorites** - Saved to database
+- ✅ **Products** - Stored in database
+- ✅ **Analytics** - Tracked and stored
+- ✅ **Admin Changes** - Saved to database
+
+**Data persists across sessions** - users can log in from any device with the same credentials.
 
 ## 🔄 Auto-Deploy Status
 Currently using git push for deployments. Consider setting up GitHub integration for automatic deploys.
