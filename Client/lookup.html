@@ -1052,12 +1052,29 @@
         let currentCategory = 'all';
         let currentSearch = '';
         let currentDetailProduct = null;
+        let productsDatabase = []; // Will be populated from API
+
+        // Load products from API
+        async function loadProductsFromAPI() {
+            try {
+                const response = await fetch(`${API_BASE}/products`);
+                if (response.ok) {
+                    const data = await response.json();
+                    productsDatabase = data.products || [];
+                } else {
+                    console.error('Failed to load products from API');
+                }
+            } catch (error) {
+                console.error('Error loading products:', error);
+            }
+        }
 
         // Initialize
-        window.onload = function() {
+        window.onload = async function() {
             // Wait for user-auth.js to load and initialize
-            setTimeout(() => {
+            setTimeout(async () => {
                 checkAuth();
+                await loadProductsFromAPI();
                 loadFavorites();
                 displayProducts();
                 updateFavoriteCount();
@@ -1156,13 +1173,13 @@
 
         function createProductCard(product) {
             const isFavorited = favorites.includes(product.id);
-            const scoreClass = product.score >= 80 ? 'score-safe' : product.score >= 50 ? 'score-moderate' : 'score-harmful';
-            const scoreIcon = product.score >= 80 ? 'fa-check-circle' : product.score >= 50 ? 'fa-exclamation-circle' : 'fa-times-circle';
+            const scoreClass = product.oceanScore >= 80 ? 'score-safe' : product.oceanScore >= 50 ? 'score-moderate' : 'score-harmful';
+            const scoreIcon = product.oceanScore >= 80 ? 'fa-check-circle' : product.oceanScore >= 50 ? 'fa-exclamation-circle' : 'fa-times-circle';
             
             return `
                 <div class="product-card" data-product-id="${product.id}" onclick="openProductDetail(${product.id})">
                     <div class="product-image-container">
-                        <img src="${product.image}" alt="${product.name}" class="product-image" 
+                        <img src="${product.imageUrl || 'assets/logo/main-logo.png'}" alt="${product.name}" class="product-image" 
                              onerror="this.src='https://via.placeholder.com/400x400/0EA5E9/FFFFFF?text=Product+Image'">
                         <div class="favorite-icon ${isFavorited ? 'favorited' : ''}" onclick="event.stopPropagation(); toggleFavorite(${product.id})">
                             <i class="fas fa-heart"></i>
@@ -1173,15 +1190,18 @@
                             <i class="fas fa-tag me-1"></i>${product.category}
                         </span>
                         <div class="product-name">${product.name}</div>
+                        ${product.brand ? `<div style="color: #64748b; font-size: 0.9rem; margin-bottom: 10px;">${product.brand}</div>` : ''}
                         
                         <div class="score-badge ${scoreClass}">
                             <i class="fas ${scoreIcon}"></i>
-                            Ocean Score: ${product.score}/100
+                            Ocean Score: ${product.oceanScore}/100
                         </div>
                         
+                        ${product.description ? `
                         <div class="score-reason">
-                            <i class="fas fa-info-circle me-1"></i>${product.reason}
+                            <i class="fas fa-info-circle me-1"></i>${product.description}
                         </div>
+                        ` : ''}
                         
                         ${createIngredientsSection(product)}
                         
@@ -1194,29 +1214,38 @@
         }
 
         function createIngredientsSection(product) {
-            if (product.harmfulIngredients.length > 0) {
+            if (!product.ingredients || product.ingredients.length === 0) {
+                return '';
+            }
+            
+            const harmfulIngredients = product.ingredients.filter(ing => ing.isReefSafe === false);
+            const safeIngredients = product.ingredients.filter(ing => ing.isReefSafe === true);
+            
+            if (harmfulIngredients.length > 0) {
                 return `
                     <div class="ingredients-section">
                         <div style="font-weight: 700; color: #dc2626; margin-bottom: 8px;">
                             <i class="fas fa-exclamation-triangle me-1"></i>Harmful Ingredients Detected:
                         </div>
-                        ${product.harmfulIngredients.map(ing => 
-                            `<span class="ingredient-tag ingredient-harmful">${ing}</span>`
+                        ${harmfulIngredients.slice(0, 3).map(ing => 
+                            `<span class="ingredient-tag ingredient-harmful">${ing.name}</span>`
                         ).join('')}
                     </div>
                 `;
-            } else {
+            } else if (safeIngredients.length > 0) {
                 return `
                     <div class="ingredients-section safe">
                         <div style="font-weight: 700; color: #059669; margin-bottom: 8px;">
                             <i class="fas fa-leaf me-1"></i>Safe Ingredients:
                         </div>
-                        ${product.ingredients.slice(0, 4).map(ing => 
-                            `<span class="ingredient-tag ingredient-safe">${ing}</span>`
+                        ${safeIngredients.slice(0, 4).map(ing => 
+                            `<span class="ingredient-tag ingredient-safe">${ing.name}</span>`
                         ).join('')}
                     </div>
                 `;
             }
+            
+            return '';
         }
 
         function buyProduct(productName) {
