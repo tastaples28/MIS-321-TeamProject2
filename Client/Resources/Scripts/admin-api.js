@@ -62,7 +62,8 @@ async function loadUsersFromAPI() {
 
 async function loadProductsFromAPI() {
     try {
-        const response = await fetch(`${API_BASE}/products`);
+        // Fetch products with pagination to get all products
+        const response = await fetch(`${API_BASE}/products?page=1&pageSize=100`);
         if (response.ok) {
             const data = await response.json();
             console.log('API response:', data);
