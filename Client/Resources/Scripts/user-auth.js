@@ -10,8 +10,12 @@ let currentUser = null;
 
 // Initialize user authentication
 document.addEventListener('DOMContentLoaded', function() {
-    // User session managed via API only
-    // No localStorage - all data stored in MySQL database on Heroku
+    // Restore user from sessionStorage
+    const savedUser = sessionStorage.getItem('currentUser');
+    if (savedUser) {
+        currentUser = JSON.parse(savedUser);
+        updateUIForLoggedInUser();
+    }
 });
 
 // User Registration
@@ -42,7 +46,8 @@ async function registerUser(username, email, password, sensitivityPreferences = 
 
         if (response.ok && data.success) {
             currentUser = data.user;
-            // Store in session only (all persistent data in MySQL database)
+            // Store in sessionStorage (session data only, not persistent user data)
+            sessionStorage.setItem('currentUser', JSON.stringify(currentUser));
             updateUIForLoggedInUser();
             return { success: true, message: data.message, user: data.user };
         } else {
@@ -80,7 +85,8 @@ async function loginUser(username, password) {
 
         if (response.ok && data.success) {
             currentUser = data.user;
-            // Store in session only (all persistent data in MySQL database)
+            // Store in sessionStorage (session data only, not persistent user data)
+            sessionStorage.setItem('currentUser', JSON.stringify(currentUser));
             updateUIForLoggedInUser();
             return { success: true, message: data.message, user: data.user };
         } else {
@@ -95,7 +101,7 @@ async function loginUser(username, password) {
 // User Logout
 function logoutUser() {
     currentUser = null;
-    // Clear session (authentication handled by API)
+    sessionStorage.removeItem('currentUser');
     updateUIForLoggedOutUser();
 }
 
