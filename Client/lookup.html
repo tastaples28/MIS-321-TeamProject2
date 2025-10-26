@@ -881,85 +881,28 @@
         // Comprehensive Product Database - DEPRECATED - Now loaded from API
         // All product data is loaded from the API (MySQL database on Heroku)
 
-        // Enhanced Favorites System - Using localStorage for instant performance
+        // Favorites System - Direct API calls (NO localStorage)
+        let favorites = []; // Array of product IDs from API
         let currentCategory = 'all';
         let currentSearch = '';
         let currentDetailProduct = null;
         let productsDatabase = []; // Will be populated from API
         
-        // Get favorites from localStorage with sync to API
-        function getFavorites() {
-            try {
-                const stored = localStorage.getItem('favorites');
-                return stored ? JSON.parse(stored) : [];
-            } catch (error) {
-                return [];
-            }
-        }
-        
-        // Save favorites to localStorage
-        function saveFavorites(favoritesArray) {
-            try {
-                localStorage.setItem('favorites', JSON.stringify(favoritesArray));
-            } catch (error) {
-                console.error('Error saving favorites:', error);
-            }
-        }
-        
-        // Add to favorites (instant UI update + API sync in background)
-        async function addToFavoritesLocal(productId) {
-            let favorites = getFavorites();
-            if (!favorites.includes(productId)) {
-                favorites.push(productId);
-                saveFavorites(favorites);
-                // Sync to API in background (don't block UI)
-                syncFavoritesToAPI(productId, true).catch(console.error);
-            }
-            return favorites;
-        }
-        
-        // Remove from favorites (instant UI update + API sync in background)
-        async function removeFromFavoritesLocal(productId) {
-            let favorites = getFavorites();
-            favorites = favorites.filter(id => id !== productId);
-            saveFavorites(favorites);
-            // Sync to API in background (don't block UI)
-            syncFavoritesToAPI(productId, false).catch(console.error);
-            return favorites;
-        }
-        
-        // Sync favorites to API (background operation)
-        async function syncFavoritesToAPI(productId, isFavorite) {
+        // Get favorites from API only
+        async function getFavorites() {
             const user = getCurrentUser();
-            if (!user) return;
-            
-            try {
-                const endpoint = `${window.API_BASE}/userfavorites/${user.id}/favorites/${productId}`;
-                if (isFavorite) {
-                    await fetch(endpoint, { method: 'POST' });
-                } else {
-                    await fetch(endpoint, { method: 'DELETE' });
-                }
-            } catch (error) {
-                console.error('Background API sync failed:', error);
-            }
-        }
-        
-        // Load favorites from API on page load
-        async function syncFavoritesFromAPI() {
-            const user = getCurrentUser();
-            if (!user) return;
+            if (!user) return [];
             
             try {
                 const response = await fetch(`${window.API_BASE}/userfavorites/${user.id}`);
                 if (response.ok) {
                     const favoriteProducts = await response.json();
-                    const favoriteIds = favoriteProducts.map(p => p.id || p.Id);
-                    saveFavorites(favoriteIds);
+                    return favoriteProducts.map(p => p.id || p.Id);
                 }
             } catch (error) {
-                console.error('Error loading favorites from API:', error);
+                console.error('Error loading favorites:', error);
             }
+            return [];
         }
 
         // Load products from API
@@ -1028,61 +971,36 @@
         }
 
         async function loadFavorites() {
-            // Load from API and sync to localStorage
-            await syncFavoritesFromAPI();
+            // Load from API and update global favorites array
+            favorites = await getFavorites();
+            updateFavoriteCount();
         }
 
         async function updateFavoriteCount() {
             const favCountElement = document.getElementById('favCount');
             if (!favCountElement) return;
             
-            const favorites = getFavorites();
             favCountElement.textContent = favorites.length;
         }
 
         // Enhanced toggle favorite with instant UI updates
         async function toggleFavorite(productId) {
-            console.log('toggleFavorite called for product:', productId);
             const user = getCurrentUser();
             if (!user) {
                 alert('Please log in to add favorites');
                 return;
             }
             
-            const favorites = getFavorites();
-            console.log('Current favorites:', favorites);
             const isFavorited = favorites.includes(productId);
-            console.log('Is favorited?', isFavorited);
             
-            // Update localStorage FIRST for instant feedback
-            let newFavorites;
-            if (isFavorited) {
-                console.log('Removing from favorites');
-                newFavorites = favorites.filter(id => id !== productId);
-                saveFavorites(newFavorites);
-                // Sync to API in background
-                syncFavoritesToAPI(productId, false).catch(console.error);
-            } else {
-                console.log('Adding to favorites');
-                newFavorites = [...favorites, productId];
-                saveFavorites(newFavorites);
-                // Sync to API in background
-                syncFavoritesToAPI(productId, true).catch(console.error);
-            }
-            
-            console.log('New favorites:', newFavorites);
-            
-            // Instant visual feedback with animation - NO PAGE REFRESH
+            // Instant visual feedback with animation
             const icon = document.querySelector(`[data-product-id="${productId}"] .favorite-icon`);
-            console.log('Icon element:', icon);
             if (icon) {
-                // Immediately toggle the visual state based on NEW state
+                // Immediately toggle the visual state
                 if (isFavorited) {
                     icon.classList.remove('favorited');
-                    console.log('Removed favorited class');
                 } else {
                     icon.classList.add('favorited');
-                    console.log('Added favorited class');
                 }
                 
                 // Add animation
@@ -1091,14 +1009,31 @@
                 setTimeout(() => { icon.style.transform = 'scale(1)'; }, 200);
             }
             
-            // Update count instantly
-            updateFavoriteCount();
-            console.log('Updated favorite count');
-            
-            // Update favorites modal if open (without re-rendering product grid)
-            const favoritesModal = document.getElementById('favoritesModal');
-            if (favoritesModal && favoritesModal.classList.contains('show')) {
-                displayFavoritesModal();
+            // Make API call immediately
+            try {
+                const endpoint = `${window.API_BASE}/userfavorites/${user.id}/favorites/${productId}`;
+                let response;
+                if (isFavorited) {
+                    response = await fetch(endpoint, { method: 'DELETE' });
+                    favorites = favorites.filter(id => id !== productId);
+                } else {
+                    response = await fetch(endpoint, { method: 'POST' });
+                    favorites.push(productId);
+                }
+                
+                if (response.ok) {
+                    // Update count
+                    updateFavoriteCount();
+                    
+                    // Update favorites modal if open
+                    const favoritesModal = document.getElementById('favoritesModal');
+                    if (favoritesModal && favoritesModal.classList.contains('show')) {
+                        displayFavoritesModal();
+                    }
+                }
+            } catch (error) {
+                console.error('Error toggling favorite:', error);
+                alert('Failed to update favorite. Please try again.');
             }
         }
 
@@ -1144,7 +1079,6 @@
         }
 
         function createProductCard(product) {
-            const favorites = getFavorites();
             const isFavorited = favorites.includes(product.id);
             const scoreClass = product.oceanScore >= 80 ? 'score-safe' : product.oceanScore >= 50 ? 'score-moderate' : 'score-harmful';
             const scoreIcon = product.oceanScore >= 80 ? 'fa-check-circle' : product.oceanScore >= 50 ? 'fa-exclamation-circle' : 'fa-times-circle';
