@@ -218,6 +218,13 @@ namespace OceanFriendlyProductFinder.Controllers
                 // Calculate Ocean Score
                 var breakdown = await _oceanScoreService.CalculateOceanScoreAsync(productId);
                 
+                // Ensure scores are at least 1 to satisfy the database constraint
+                var oceanScore = Math.Max(1, breakdown.TotalScore);
+                var bioScore = Math.Max(1, breakdown.BiodegradabilityScore);
+                var coralScore = Math.Max(1, breakdown.CoralSafetyScore);
+                var fishScore = Math.Max(1, breakdown.FishSafetyScore);
+                var coverageScore = Math.Max(1, breakdown.CoverageScore);
+                
                 var updateQuery = @"
                     UPDATE Products 
                     SET OceanScore = @oceanScore,
@@ -229,11 +236,11 @@ namespace OceanFriendlyProductFinder.Controllers
                     WHERE Id = @productId";
 
                 using var updateCmd = new MySqlCommand(updateQuery, (MySqlConnection)connection, (MySqlTransaction)transaction);
-                updateCmd.Parameters.AddWithValue("@oceanScore", breakdown.TotalScore);
-                updateCmd.Parameters.AddWithValue("@bioScore", breakdown.BiodegradabilityScore);
-                updateCmd.Parameters.AddWithValue("@coralScore", breakdown.CoralSafetyScore);
-                updateCmd.Parameters.AddWithValue("@fishScore", breakdown.FishSafetyScore);
-                updateCmd.Parameters.AddWithValue("@coverageScore", breakdown.CoverageScore);
+                updateCmd.Parameters.AddWithValue("@oceanScore", oceanScore);
+                updateCmd.Parameters.AddWithValue("@bioScore", bioScore);
+                updateCmd.Parameters.AddWithValue("@coralScore", coralScore);
+                updateCmd.Parameters.AddWithValue("@fishScore", fishScore);
+                updateCmd.Parameters.AddWithValue("@coverageScore", coverageScore);
                 updateCmd.Parameters.AddWithValue("@productId", productId);
 
                 await updateCmd.ExecuteNonQueryAsync();
