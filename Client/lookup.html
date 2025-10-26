@@ -890,7 +890,7 @@
         // Load products from API
         async function loadProductsFromAPI() {
             try {
-                const response = await fetch(`${API_BASE}/products`);
+                const response = await fetch(`${window.API_BASE}/products`);
                 if (response.ok) {
                     const data = await response.json();
                     productsDatabase = data.products || [];
@@ -943,7 +943,7 @@
             if (!user) return;
             
             try {
-                const response = await fetch(`${API_BASE}/userfavorites/${user.id}`);
+                const response = await fetch(`${window.API_BASE}/userfavorites/${user.id}`);
                 if (response.ok) {
                     const favoriteProducts = await response.json();
                     favorites = favoriteProducts.map(p => p.id);
@@ -962,7 +962,7 @@
             if (!favCountElement) return; // Element not found yet
             
             try {
-                const response = await fetch(`${API_BASE}/userfavorites/${user.id}/favorites/count`);
+                const response = await fetch(`${window.API_BASE}/userfavorites/${user.id}/favorites/count`);
                 if (response.ok) {
                     const data = await response.json();
                     favCountElement.textContent = data.count || 0;
@@ -987,7 +987,7 @@
             try {
                 if (isFavorited) {
                     // Remove from favorites
-                    const response = await fetch(`${API_BASE}/userfavorites/${user.id}/favorites/${productId}`, {
+                    const response = await fetch(`${window.API_BASE}/userfavorites/${user.id}/favorites/${productId}`, {
                         method: 'DELETE'
                     });
                     
@@ -996,7 +996,7 @@
                     }
                 } else {
                     // Add to favorites
-                    const response = await fetch(`${API_BASE}/userfavorites/${user.id}/favorites/${productId}`, {
+                    const response = await fetch(`${window.API_BASE}/userfavorites/${user.id}/favorites/${productId}`, {
                         method: 'POST'
                     });
                     
@@ -1170,7 +1170,7 @@
             }
             
             try {
-                const response = await fetch(`${API_BASE}/userfavorites/${user.id}`);
+                const response = await fetch(`${window.API_BASE}/userfavorites/${user.id}`);
                 if (response.ok) {
                     const favoriteProducts = await response.json();
                     
