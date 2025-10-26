@@ -26,12 +26,22 @@ namespace OceanFriendlyProductFinder.Controllers
                 string.IsNullOrWhiteSpace(request.Email) || 
                 string.IsNullOrWhiteSpace(request.Password))
             {
-                return BadRequest("Username, email, and password are required");
+                return BadRequest(new UserRegistrationResponse
+                {
+                    Success = false,
+                    Message = "Username, email, and password are required",
+                    User = null
+                });
             }
 
             if (request.Password.Length < 6)
             {
-                return BadRequest("Password must be at least 6 characters long");
+                return BadRequest(new UserRegistrationResponse
+                {
+                    Success = false,
+                    Message = "Password must be at least 6 characters long",
+                    User = null
+                });
             }
 
             using var connection = _databaseService.GetConnection();
@@ -48,7 +58,12 @@ namespace OceanFriendlyProductFinder.Controllers
                 var existingCount = Convert.ToInt32(await checkCmd.ExecuteScalarAsync());
                 if (existingCount > 0)
                 {
-                    return Conflict("Username or email already exists");
+                    return Conflict(new UserRegistrationResponse
+                    {
+                        Success = false,
+                        Message = "Username or email already exists",
+                        User = null
+                    });
                 }
 
                 // Create new user
@@ -96,15 +111,30 @@ namespace OceanFriendlyProductFinder.Controllers
                     });
                 }
 
-                return BadRequest("Failed to retrieve created user");
+                return BadRequest(new UserRegistrationResponse
+                {
+                    Success = false,
+                    Message = "Failed to retrieve created user",
+                    User = null
+                });
             }
             catch (MySqlException ex) when (ex.Number == 1062) // UNIQUE constraint failed
             {
-                return Conflict("Username or email already exists");
+                return Conflict(new UserRegistrationResponse
+                {
+                    Success = false,
+                    Message = "Username or email already exists",
+                    User = null
+                });
             }
             catch (Exception ex)
             {
-                return BadRequest($"Registration failed: {ex.Message}");
+                return BadRequest(new UserRegistrationResponse
+                {
+                    Success = false,
+                    Message = $"Registration failed: {ex.Message}",
+                    User = null
+                });
             }
         }
 
