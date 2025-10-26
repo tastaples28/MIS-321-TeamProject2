@@ -1,7 +1,9 @@
 // User Authentication and Favorites Management
 
-// API Configuration
-const API_BASE = 'http://localhost:5001/api';
+// API Configuration - Use Heroku URL for production
+const API_BASE = window.location.hostname === 'localhost' 
+    ? 'http://localhost:5001/api' 
+    : 'https://reefrates-555b282e7634.herokuapp.com/api';
 
 // Global user state
 let currentUser = null;
