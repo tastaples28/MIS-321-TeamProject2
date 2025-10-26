@@ -1,8 +1,3 @@
-// API Configuration - Use Heroku URL for production
-const API_BASE = window.location.hostname === 'localhost' 
-    ? 'http://localhost:5001/api' 
-    : 'https://reefrates-555b282e7634.herokuapp.com/api';
-
 // Global variables
 let currentProductId = null;
 let currentPage = 1;
@@ -88,7 +83,7 @@ async function searchProducts() {
     params.append('page', currentPage);
     params.append('pageSize', 12);
     
-    const response = await fetch(`${API_BASE}/products?${params.toString()}`);
+    const response = await fetch(`${window.API_BASE}/products?${params.toString()}`);
     
     if (!response.ok) {
       throw new Error('Failed to fetch products');
@@ -228,7 +223,7 @@ async function viewProduct(productId) {
   currentProductId = productId;
   
   try {
-    const response = await fetch(`${API_BASE}/products/${productId}`);
+    const response = await fetch(`${window.API_BASE}/products/${productId}`);
     
     if (!response.ok) {
       throw new Error('Product not found');
@@ -422,7 +417,7 @@ async function loadFavorites() {
     const favoriteProducts = [];
     for (const productId of favorites) {
       try {
-        const response = await fetch(`${API_BASE}/products/${productId}`);
+        const response = await fetch(`${window.API_BASE}/products/${productId}`);
         if (response.ok) {
           const product = await response.json();
           favoriteProducts.push(product);
@@ -545,7 +540,7 @@ async function loadAdminProducts() {
   content.innerHTML = '<div class="text-center"><div class="spinner-border" role="status"></div></div>';
   
   try {
-    const response = await fetch(`${API_BASE}/products`);
+    const response = await fetch(`${window.API_BASE}/products`);
     if (!response.ok) throw new Error('Failed to fetch products');
     
     const data = await response.json();
@@ -605,7 +600,7 @@ async function loadAdminIngredients() {
   content.innerHTML = '<div class="text-center"><div class="spinner-border" role="status"></div></div>';
   
   try {
-    const response = await fetch(`${API_BASE}/ingredients`);
+    const response = await fetch(`${window.API_BASE}/ingredients`);
     if (!response.ok) throw new Error('Failed to fetch ingredients');
     
     const ingredients = await response.json();
@@ -666,7 +661,7 @@ async function loadAdminUsers() {
   content.innerHTML = '<div class="text-center"><div class="spinner-border" role="status"></div></div>';
   
   try {
-    const response = await fetch(`${API_BASE}/admin/users`);
+    const response = await fetch(`${window.API_BASE}/admin/users`);
     if (!response.ok) throw new Error('Failed to fetch users');
     
     const users = await response.json();
@@ -713,7 +708,7 @@ async function loadAdminAnalytics() {
   content.innerHTML = '<div class="text-center"><div class="spinner-border" role="status"></div></div>';
   
   try {
-    const response = await fetch(`${API_BASE}/analytics/summary`);
+    const response = await fetch(`${window.API_BASE}/analytics/summary`);
     if (!response.ok) throw new Error('Failed to fetch analytics');
     
     const data = await response.json();
@@ -824,7 +819,7 @@ async function loadAdminWeights() {
   content.innerHTML = '<div class="text-center"><div class="spinner-border" role="status"></div></div>';
   
   try {
-    const response = await fetch(`${API_BASE}/admin/ocean-score-weights`);
+    const response = await fetch(`${window.API_BASE}/admin/ocean-score-weights`);
     if (!response.ok) throw new Error('Failed to fetch weights');
     
     const weights = await response.json();
@@ -933,7 +928,7 @@ async function saveWeights() {
   }
   
   try {
-    const response = await fetch(`${API_BASE}/admin/ocean-score-weights`, {
+    const response = await fetch(`${window.API_BASE}/admin/ocean-score-weights`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json'
@@ -967,7 +962,7 @@ async function resetWeights() {
 
 async function exportAnalytics() {
   try {
-    window.location.href = `${API_BASE}/analytics/export/csv`;
+    window.location.href = `${window.API_BASE}/analytics/export/csv`;
   } catch (error) {
     showError('Failed to export analytics.');
   }
@@ -986,7 +981,7 @@ function showError(message) {
 async function logAnalytics(action, productId = null, metadata = null) {
   try {
     const currentUser = getCurrentUser();
-    await fetch(`${API_BASE}/analytics/log`, {
+    await fetch(`${window.API_BASE}/analytics/log`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -1016,7 +1011,7 @@ async function deleteProduct(id) {
   if (!confirm('Are you sure you want to delete this product?')) return;
   
   try {
-    const response = await fetch(`${API_BASE}/products/${id}`, {
+    const response = await fetch(`${window.API_BASE}/products/${id}`, {
       method: 'DELETE'
     });
     
@@ -1044,7 +1039,7 @@ async function deleteIngredient(id) {
   if (!confirm('Are you sure you want to delete this ingredient?')) return;
   
   try {
-    const response = await fetch(`${API_BASE}/ingredients/${id}`, {
+    const response = await fetch(`${window.API_BASE}/ingredients/${id}`, {
       method: 'DELETE'
     });
     

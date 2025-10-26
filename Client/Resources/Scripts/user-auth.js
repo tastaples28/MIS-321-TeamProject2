@@ -1,10 +1,5 @@
 // User Authentication and Favorites Management
 
-// API Configuration - Use Heroku URL for production
-const API_BASE = window.location.hostname === 'localhost' 
-    ? 'http://localhost:5001/api' 
-    : 'https://reefrates-555b282e7634.herokuapp.com/api';
-
 // Global user state
 let currentUser = null;
 
@@ -21,7 +16,7 @@ document.addEventListener('DOMContentLoaded', function() {
 // User Registration
 async function registerUser(username, email, password, sensitivityPreferences = null) {
     try {
-        const response = await fetch(`${API_BASE}/userauth/register`, {
+        const response = await fetch(`${window.API_BASE}/userauth/register`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -62,7 +57,7 @@ async function registerUser(username, email, password, sensitivityPreferences = 
 // User Login
 async function loginUser(username, password) {
     try {
-        const response = await fetch(`${API_BASE}/userauth/login`, {
+        const response = await fetch(`${window.API_BASE}/userauth/login`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -164,7 +159,7 @@ async function addToFavorites(productId) {
     }
 
     try {
-        const response = await fetch(`${API_BASE}/userfavorites/${currentUser.id}/favorites/${productId}`, {
+        const response = await fetch(`${window.API_BASE}/userfavorites/${currentUser.id}/favorites/${productId}`, {
             method: 'POST'
         });
 
@@ -193,7 +188,7 @@ async function removeFromFavorites(productId) {
     }
 
     try {
-        const response = await fetch(`${API_BASE}/userfavorites/${currentUser.id}/favorites/${productId}`, {
+        const response = await fetch(`${window.API_BASE}/userfavorites/${currentUser.id}/favorites/${productId}`, {
             method: 'DELETE'
         });
 
@@ -219,7 +214,7 @@ async function toggleFavorite(productId) {
 
     try {
         // First check current status
-        const statusResponse = await fetch(`${API_BASE}/userfavorites/${currentUser.id}/favorites/${productId}/status`);
+        const statusResponse = await fetch(`${window.API_BASE}/userfavorites/${currentUser.id}/favorites/${productId}/status`);
         const statusData = await statusResponse.json();
 
         if (statusData.isFavorite) {
@@ -238,7 +233,7 @@ async function loadUserFavorites() {
     if (!currentUser) return;
 
     try {
-        const response = await fetch(`${API_BASE}/userfavorites/${currentUser.id}`);
+        const response = await fetch(`${window.API_BASE}/userfavorites/${currentUser.id}`);
         if (response.ok) {
             const favorites = await response.json();
             updateFavoriteButtons(favorites);
@@ -278,7 +273,7 @@ async function checkFavoriteStatus(productId) {
     if (!currentUser) return false;
 
     try {
-        const response = await fetch(`${API_BASE}/userfavorites/${currentUser.id}/favorites/${productId}/status`);
+        const response = await fetch(`${window.API_BASE}/userfavorites/${currentUser.id}/favorites/${productId}/status`);
         if (response.ok) {
             const data = await response.json();
             return data.isFavorite;
@@ -294,7 +289,7 @@ async function getFavoriteCount() {
     if (!currentUser) return 0;
 
     try {
-        const response = await fetch(`${API_BASE}/userfavorites/${currentUser.id}/favorites/count`);
+        const response = await fetch(`${window.API_BASE}/userfavorites/${currentUser.id}/favorites/count`);
         if (response.ok) {
             const data = await response.json();
             return data.count;

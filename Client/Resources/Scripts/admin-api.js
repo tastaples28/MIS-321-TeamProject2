@@ -1,10 +1,5 @@
 // Admin Portal JavaScript with API Integration
 
-// API Configuration - Use Heroku URL for production
-const API_BASE = window.location.hostname === 'localhost' 
-    ? 'http://localhost:5001/api' 
-    : 'https://reefrates-555b282e7634.herokuapp.com/api';
-
 // Initialize data storage
 let users = [];
 let products = [];
@@ -46,7 +41,7 @@ async function loadData() {
 // API Functions
 async function loadUsersFromAPI() {
     try {
-        const response = await fetch(`${API_BASE}/admin/users`);
+        const response = await fetch(`${window.API_BASE}/admin/users`);
         if (response.ok) {
             const data = await response.json();
             // API returns array of users
@@ -63,7 +58,7 @@ async function loadUsersFromAPI() {
 async function loadProductsFromAPI() {
     try {
         // Fetch products with pagination to get all products
-        const response = await fetch(`${API_BASE}/products?page=1&pageSize=100`);
+        const response = await fetch(`${window.API_BASE}/products?page=1&pageSize=100`);
         if (response.ok) {
             const data = await response.json();
             console.log('API response:', data);
@@ -98,7 +93,7 @@ async function loadProductsFromAPI() {
 
 async function loadWeightsFromAPI() {
     try {
-        const response = await fetch(`${API_BASE}/admin/ocean-score-weights`);
+        const response = await fetch(`${window.API_BASE}/admin/ocean-score-weights`);
         if (response.ok) {
             const weights = await response.json();
             oceanScoreWeights = weights;
@@ -112,7 +107,7 @@ async function loadWeightsFromAPI() {
 
 async function loadAnalyticsFromAPI() {
     try {
-        const response = await fetch(`${API_BASE}/analytics/summary`);
+        const response = await fetch(`${window.API_BASE}/analytics/summary`);
         if (response.ok) {
             const data = await response.json();
             // Convert API format to our analytics format
@@ -147,7 +142,7 @@ async function loadAnalyticsFromAPI() {
 // Save functions - API only (all data stored in MySQL database on Heroku)
 async function saveUsers() {
     try {
-        const response = await fetch(`${API_BASE}/admin/users`, {
+        const response = await fetch(`${window.API_BASE}/admin/users`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(users)
@@ -187,7 +182,7 @@ async function saveWeights() {
     };
     
     try {
-        const response = await fetch(`${API_BASE}/admin/ocean-score-weights`, {
+        const response = await fetch(`${window.API_BASE}/admin/ocean-score-weights`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(oceanScoreWeights)
@@ -321,7 +316,7 @@ async function saveUser(event) {
     try {
         if (id) {
             // Update existing user
-            const response = await fetch(`${API_BASE}/admin/users/${id}`, {
+            const response = await fetch(`${window.API_BASE}/admin/users/${id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -365,7 +360,7 @@ async function deleteUser(id) {
     if (!confirm('Are you sure you want to delete this user?')) return;
     
     try {
-        const response = await fetch(`${API_BASE}/admin/users/${id}`, {
+        const response = await fetch(`${window.API_BASE}/admin/users/${id}`, {
             method: 'DELETE',
             headers: { 'Content-Type': 'application/json' }
         });
@@ -464,7 +459,7 @@ async function saveProduct(event) {
         // Add new product via API
         try {
             const brand = category; // Use category as brand for now
-            const response = await fetch(`${API_BASE}/products`, {
+            const response = await fetch(`${window.API_BASE}/products`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
