@@ -881,11 +881,86 @@
         // Comprehensive Product Database - DEPRECATED - Now loaded from API
         // All product data is loaded from the API (MySQL database on Heroku)
 
-        let favorites = [];
+        // Enhanced Favorites System - Using localStorage for instant performance
         let currentCategory = 'all';
         let currentSearch = '';
         let currentDetailProduct = null;
         let productsDatabase = []; // Will be populated from API
+        
+        // Get favorites from localStorage with sync to API
+        function getFavorites() {
+            try {
+                const stored = localStorage.getItem('favorites');
+                return stored ? JSON.parse(stored) : [];
+            } catch (error) {
+                return [];
+            }
+        }
+        
+        // Save favorites to localStorage
+        function saveFavorites(favoritesArray) {
+            try {
+                localStorage.setItem('favorites', JSON.stringify(favoritesArray));
+            } catch (error) {
+                console.error('Error saving favorites:', error);
+            }
+        }
+        
+        // Add to favorites (instant UI update + API sync in background)
+        async function addToFavoritesLocal(productId) {
+            let favorites = getFavorites();
+            if (!favorites.includes(productId)) {
+                favorites.push(productId);
+                saveFavorites(favorites);
+                // Sync to API in background (don't block UI)
+                syncFavoritesToAPI(productId, true).catch(console.error);
+            }
+            return favorites;
+        }
+        
+        // Remove from favorites (instant UI update + API sync in background)
+        async function removeFromFavoritesLocal(productId) {
+            let favorites = getFavorites();
+            favorites = favorites.filter(id => id !== productId);
+            saveFavorites(favorites);
+            // Sync to API in background (don't block UI)
+            syncFavoritesToAPI(productId, false).catch(console.error);
+            return favorites;
+        }
+        
+        // Sync favorites to API (background operation)
+        async function syncFavoritesToAPI(productId, isFavorite) {
+            const user = getCurrentUser();
+            if (!user) return;
+            
+            try {
+                const endpoint = `${window.API_BASE}/userfavorites/${user.id}/favorites/${productId}`;
+                if (isFavorite) {
+                    await fetch(endpoint, { method: 'POST' });
+                } else {
+                    await fetch(endpoint, { method: 'DELETE' });
+                }
+            } catch (error) {
+                console.error('Background API sync failed:', error);
+            }
+        }
+        
+        // Load favorites from API on page load
+        async function syncFavoritesFromAPI() {
+            const user = getCurrentUser();
+            if (!user) return;
+            
+            try {
+                const response = await fetch(`${window.API_BASE}/userfavorites/${user.id}`);
+                if (response.ok) {
+                    const favoriteProducts = await response.json();
+                    const favoriteIds = favoriteProducts.map(p => p.id || p.Id);
+                    saveFavorites(favoriteIds);
+                }
+            } catch (error) {
+                console.error('Error loading favorites from API:', error);
+            }
+        }
 
         // Load products from API
         async function loadProductsFromAPI() {
@@ -953,42 +1028,19 @@
         }
 
         async function loadFavorites() {
-            const user = getCurrentUser();
-            if (!user) return;
-            
-            try {
-                const response = await fetch(`${window.API_BASE}/userfavorites/${user.id}`);
-                if (response.ok) {
-                    const favoriteProducts = await response.json();
-                    favorites = favoriteProducts.map(p => p.id);
-                    updateFavoriteCount();
-                }
-            } catch (error) {
-                console.error('Error loading favorites:', error);
-            }
+            // Load from API and sync to localStorage
+            await syncFavoritesFromAPI();
         }
 
         async function updateFavoriteCount() {
-            const user = getCurrentUser();
-            if (!user) return;
-            
             const favCountElement = document.getElementById('favCount');
-            if (!favCountElement) return; // Element not found yet
+            if (!favCountElement) return;
             
-            try {
-                const response = await fetch(`${window.API_BASE}/userfavorites/${user.id}/favorites/count`);
-                if (response.ok) {
-                    const data = await response.json();
-                    favCountElement.textContent = data.count || 0;
-                }
-            } catch (error) {
-                console.error('Error updating favorite count:', error);
-                if (favCountElement) {
-                    favCountElement.textContent = favorites.length;
-                }
-            }
+            const favorites = getFavorites();
+            favCountElement.textContent = favorites.length;
         }
 
+        // Enhanced toggle favorite with instant UI updates
         async function toggleFavorite(productId) {
             const user = getCurrentUser();
             if (!user) {
@@ -996,39 +1048,32 @@
                 return;
             }
             
+            const favorites = getFavorites();
             const isFavorited = favorites.includes(productId);
             
-            try {
-                if (isFavorited) {
-                    // Remove from favorites
-                    const response = await fetch(`${window.API_BASE}/userfavorites/${user.id}/favorites/${productId}`, {
-                        method: 'DELETE'
-                    });
-                    
-                    if (response.ok) {
-                        favorites = favorites.filter(id => id !== productId);
-                    }
-                } else {
-                    // Add to favorites
-                    const response = await fetch(`${window.API_BASE}/userfavorites/${user.id}/favorites/${productId}`, {
-                        method: 'POST'
-                    });
-                    
-                    if (response.ok) {
-                        favorites.push(productId);
-                    }
-                }
-                
-                // Update UI - re-render products to reflect favorite state
-                updateFavoriteCount();
-                displayProducts();
-            } catch (error) {
-                console.error('Error toggling favorite:', error);
-                alert('Failed to update favorite');
+            // Instant UI update with smooth animation
+            const icon = document.querySelector(`[data-product-id="${productId}"] .favorite-icon`);
+            if (icon) {
+                icon.classList.toggle('favorited');
+                // Add animation
+                icon.style.transform = 'scale(1.3)';
+                setTimeout(() => { icon.style.transform = 'scale(1)'; }, 200);
             }
             
+            // Update localStorage immediately
+            if (isFavorited) {
+                await removeFromFavoritesLocal(productId);
+            } else {
+                await addToFavoritesLocal(productId);
+            }
+            
+            // Update UI
+            updateFavoriteCount();
+            displayProducts();
+            
             // If favorites modal is open, refresh it
-            if (document.getElementById('favoritesModal').classList.contains('show')) {
+            const favoritesModal = document.getElementById('favoritesModal');
+            if (favoritesModal && favoritesModal.classList.contains('show')) {
                 displayFavoritesModal();
             }
         }
@@ -1075,6 +1120,7 @@
         }
 
         function createProductCard(product) {
+            const favorites = getFavorites();
             const isFavorited = favorites.includes(product.id);
             const scoreClass = product.oceanScore >= 80 ? 'score-safe' : product.oceanScore >= 50 ? 'score-moderate' : 'score-harmful';
             const scoreIcon = product.oceanScore >= 80 ? 'fa-check-circle' : product.oceanScore >= 50 ? 'fa-exclamation-circle' : 'fa-times-circle';
@@ -1170,8 +1216,7 @@
             const grid = document.getElementById('favoritesGrid');
             const noFavs = document.getElementById('noFavorites');
             
-            const user = getCurrentUser();
-            if (!user) return;
+            const favorites = getFavorites();
             
             if (favorites.length === 0) {
                 grid.style.display = 'none';
@@ -1179,26 +1224,18 @@
                 return;
             }
             
-            try {
-                const response = await fetch(`${window.API_BASE}/userfavorites/${user.id}`);
-                if (response.ok) {
-                    const favoriteProducts = await response.json();
-                    
-                    if (favoriteProducts.length === 0) {
-                        grid.style.display = 'none';
-                        noFavs.style.display = 'block';
-                        return;
-                    }
-                    
-                    grid.style.display = 'grid';
-                    noFavs.style.display = 'none';
-                    grid.innerHTML = favoriteProducts.map(product => createProductCard(product)).join('');
-                }
-            } catch (error) {
-                console.error('Error displaying favorites:', error);
+            // Get products from database that are favorited
+            const favoriteProducts = productsDatabase.filter(p => favorites.includes(p.id));
+            
+            if (favoriteProducts.length === 0) {
                 grid.style.display = 'none';
                 noFavs.style.display = 'block';
+                return;
             }
+            
+            grid.style.display = 'grid';
+            noFavs.style.display = 'none';
+            grid.innerHTML = favoriteProducts.map(product => createProductCard(product)).join('');
         }
 
         function logout() {
