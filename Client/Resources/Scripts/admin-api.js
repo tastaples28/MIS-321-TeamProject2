@@ -48,11 +48,14 @@ async function loadUsersFromAPI() {
     try {
         const response = await fetch(`${API_BASE}/admin/users`);
         if (response.ok) {
-            users = await response.json();
+            const data = await response.json();
+            // API returns array of users
+            users = Array.isArray(data) ? data : [];
+            console.log('Loaded users:', users);
             return;
         }
     } catch (error) {
-        console.log('Failed to load users from API:', error);
+        console.error('Failed to load users from API:', error);
     }
     throw new Error('API not available');
 }
@@ -257,12 +260,27 @@ function showAdminTab(tabName, clickedButton) {
 // USER MANAGEMENT
 function renderUsersTable() {
     const tbody = document.getElementById('users-table-body');
-    tbody.innerHTML = users.map(user => `
+    
+    if (!users || users.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center">No users found</td></tr>';
+        return;
+    }
+    
+    tbody.innerHTML = users.map(user => {
+        if (!user) return '';
+        
+        // Map API user object to admin panel format
+        const name = user.username || user.name || 'N/A';
+        const email = user.email || 'N/A';
+        const role = user.isAdmin ? 'Admin' : 'User';
+        const status = 'Active'; // API doesn't have status field
+        
+        return `
         <tr>
-            <td><strong>${user.name}</strong></td>
-            <td>${user.email}</td>
-            <td><span class="role-badge role-${user.role.toLowerCase()}">${user.role}</span></td>
-            <td><span class="status-badge status-${user.status.toLowerCase()}">${user.status}</span></td>
+            <td><strong>${name}</strong></td>
+            <td>${email}</td>
+            <td><span class="role-badge role-${role.toLowerCase()}">${role}</span></td>
+            <td><span class="status-badge status-${status.toLowerCase()}">${status}</span></td>
             <td>
                 <button class="btn-admin btn-admin-primary" onclick="editUser(${user.id})">
                     <i class="fas fa-edit"></i>
@@ -275,7 +293,8 @@ function renderUsersTable() {
                 </button>
             </td>
         </tr>
-    `).join('');
+    `;
+    }).join('');
 }
 
 function openAddUserModal() {
