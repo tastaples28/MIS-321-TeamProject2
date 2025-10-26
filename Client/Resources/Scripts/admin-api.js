@@ -38,9 +38,8 @@ async function loadData() {
         await loadWeightsFromAPI();
         await loadAnalyticsFromAPI();
     } catch (error) {
-        console.log('API not available, using local data:', error);
-        // Fallback to localStorage
-        loadDataFromLocalStorage();
+        console.log('API not available:', error);
+        alert('Unable to connect to server. Please refresh the page.');
     }
 }
 
@@ -108,75 +107,9 @@ async function loadAnalyticsFromAPI() {
     throw new Error('API not available');
 }
 
-// Local Storage Fallback
-function loadDataFromLocalStorage() {
-    // Load users
-    const storedUsers = localStorage.getItem('adminUsers');
-    if (storedUsers) {
-        users = JSON.parse(storedUsers);
-    } else {
-        // Default users
-        users = [
-            { id: 1, name: 'John Admin', email: 'admin@reefrates.com', role: 'Admin', status: 'Active' },
-            { id: 2, name: 'Sarah Manager', email: 'sarah@reefrates.com', role: 'Employee', status: 'Active' },
-            { id: 3, name: 'Mike Smith', email: 'mike@email.com', role: 'User', status: 'Active' },
-            { id: 4, name: 'Emily Johnson', email: 'emily@email.com', role: 'User', status: 'Active' },
-            { id: 5, name: 'David Lee', email: 'david@email.com', role: 'Employee', status: 'Inactive' }
-        ];
-        saveUsers();
-    }
-    
-    // Load products (sync with lookup.html data)
-    const storedProducts = localStorage.getItem('adminProducts');
-    if (storedProducts) {
-        products = JSON.parse(storedProducts);
-    } else {
-        // Default products matching lookup.html
-        products = [
-            { id: 1, name: 'Blue Lagoon Mineral Sunscreen SPF 50', category: 'sunscreen', score: 95, harmfulIngredients: [], reason: 'Uses zinc oxide and titanium dioxide for UV protection.', image: 'https://placehold.co/400x400/4ADE80/FFFFFF?text=Mineral+Sunscreen' },
-            { id: 2, name: 'BeachGuard Chemical Sunscreen SPF 30', category: 'sunscreen', score: 25, harmfulIngredients: ['oxybenzone', 'octinoxate', 'parabens'], reason: 'Contains harmful chemicals that damage coral reefs.', image: 'https://placehold.co/400x400/F87171/FFFFFF?text=Chemical+Sunscreen' },
-            { id: 3, name: 'Coral Safe Sport Sunscreen SPF 45', category: 'sunscreen', score: 88, harmfulIngredients: [], reason: 'Reef-friendly formula with mineral protection.', image: 'https://placehold.co/400x400/0EA5E9/FFFFFF?text=Sport+Sunscreen' },
-            { id: 4, name: 'Ocean Breeze Natural Shampoo', category: 'shampoo', score: 82, harmfulIngredients: [], reason: 'Plant-based formula with biodegradable ingredients.', image: 'https://placehold.co/400x400/14B8A6/FFFFFF?text=Natural+Shampoo' },
-            { id: 5, name: 'Salon Pro Ultra Shine Shampoo', category: 'shampoo', score: 42, harmfulIngredients: ['parabens'], reason: 'Contains parabens and synthetic sulfates.', image: 'https://placehold.co/400x400/FB923C/FFFFFF?text=Salon+Shampoo' },
-            { id: 6, name: 'Eco-Wave Organic Shampoo', category: 'shampoo', score: 91, harmfulIngredients: [], reason: '100% organic formula with natural cleansers.', image: 'https://placehold.co/400x400/10B981/FFFFFF?text=Organic+Shampoo' },
-            { id: 7, name: 'Silk Waves Natural Conditioner', category: 'conditioner', score: 78, harmfulIngredients: [], reason: 'Natural oils and plant-based ingredients.', image: 'https://placehold.co/400x400/06B6D4/FFFFFF?text=Natural+Conditioner' },
-            { id: 8, name: 'Pro Salon Deep Conditioner', category: 'conditioner', score: 38, harmfulIngredients: ['parabens'], reason: 'Heavy use of silicones and parabens.', image: 'https://placehold.co/400x400/EF4444/FFFFFF?text=Salon+Conditioner' },
-            { id: 9, name: 'Reef-Friendly Repair Conditioner', category: 'conditioner', score: 86, harmfulIngredients: [], reason: 'Marine-safe ingredients with plant proteins.', image: 'https://placehold.co/400x400/22C55E/FFFFFF?text=Repair+Conditioner' },
-            { id: 10, name: 'Tropical Clean Body Wash', category: 'body wash', score: 73, harmfulIngredients: [], reason: 'Uses mostly natural surfactants.', image: 'https://placehold.co/400x400/0EA5E9/FFFFFF?text=Tropical+Wash' },
-            { id: 11, name: 'Antibacterial Deep Clean Body Wash', category: 'body wash', score: 31, harmfulIngredients: ['parabens'], reason: 'Contains triclosan and parabens.', image: 'https://placehold.co/400x400/DC2626/FFFFFF?text=Antibacterial' },
-            { id: 12, name: 'Pure Ocean Organic Body Wash', category: 'body wash', score: 89, harmfulIngredients: [], reason: 'Certified organic with plant-based ingredients.', image: 'https://placehold.co/400x400/059669/FFFFFF?text=Organic+Wash' },
-            { id: 13, name: 'Bronze Goddess Tanning Oil', category: 'tanning oil', score: 45, harmfulIngredients: ['parabens'], reason: 'Contains mineral oils and synthetic fragrances.', image: 'https://placehold.co/400x400/F59E0B/FFFFFF?text=Bronze+Oil' },
-            { id: 14, name: 'Eco-Tan Natural Tanning Oil', category: 'tanning oil', score: 76, harmfulIngredients: [], reason: 'Plant-based oils that are biodegradable.', image: 'https://placehold.co/400x400/14B8A6/FFFFFF?text=Natural+Oil' },
-            { id: 15, name: 'Island Glow Tanning Accelerator', category: 'tanning oil', score: 28, harmfulIngredients: ['oxybenzone', 'octinoxate'], reason: 'Contains harmful chemicals for coral reefs.', image: 'https://placehold.co/400x400/B91C1C/FFFFFF?text=Accelerator' },
-            { id: 16, name: 'Aqua Silk Body Lotion', category: 'body lotion', score: 81, harmfulIngredients: [], reason: 'Natural moisturizers with minimal synthetics.', image: 'https://placehold.co/400x400/06B6D4/FFFFFF?text=Aqua+Silk' },
-            { id: 17, name: 'Ultra Hydrate Body Lotion', category: 'body lotion', score: 36, harmfulIngredients: ['parabens'], reason: 'Heavy use of parabens and synthetic emulsifiers.', image: 'https://placehold.co/400x400/F97316/FFFFFF?text=Ultra+Hydrate' },
-            { id: 18, name: 'Marine Glow Reef-Safe Lotion', category: 'body lotion', score: 93, harmfulIngredients: [], reason: '100% reef-safe ingredients.', image: 'https://placehold.co/400x400/16A34A/FFFFFF?text=Marine+Glow' }
-        ];
-        saveProducts();
-    }
-    
-    // Load weights
-    const storedWeights = localStorage.getItem('oceanScoreWeights');
-    if (storedWeights) {
-        oceanScoreWeights = JSON.parse(storedWeights);
-    }
-    
-    // Load analytics
-    const storedAnalytics = localStorage.getItem('adminAnalytics');
-    if (storedAnalytics) {
-        analytics = JSON.parse(storedAnalytics);
-    } else {
-        // Generate dummy analytics
-        products.forEach(p => {
-            analytics.searchCounts[p.name] = Math.floor(Math.random() * 500) + 50;
-            analytics.favorites[p.name] = Math.floor(Math.random() * 200) + 10;
-            analytics.clicks[p.name] = Math.floor(Math.random() * 300) + 20;
-        });
-        saveAnalytics();
-    }
-}
+// All data now loaded from API only - stored in MySQL database on Heroku
 
-// Save functions (try API first, fallback to localStorage)
+// Save functions - API only (all data stored in MySQL database on Heroku)
 async function saveUsers() {
     try {
         const response = await fetch(`${API_BASE}/admin/users`, {
@@ -186,9 +119,9 @@ async function saveUsers() {
         });
         if (response.ok) return;
     } catch (error) {
-        console.log('Failed to save users to API, using localStorage:', error);
+        console.error('Failed to save users to API:', error);
+        alert('Failed to save users. Please try again.');
     }
-    localStorage.setItem('adminUsers', JSON.stringify(users));
 }
 
 async function saveProducts() {
@@ -200,9 +133,9 @@ async function saveProducts() {
         });
         if (response.ok) return;
     } catch (error) {
-        console.log('Failed to save products to API, using localStorage:', error);
+        console.error('Failed to save products to API:', error);
+        alert('Failed to save products. Please try again.');
     }
-    localStorage.setItem('adminProducts', JSON.stringify(products));
 }
 
 async function saveWeights() {
@@ -237,10 +170,11 @@ async function saveWeights() {
             return;
         }
     } catch (error) {
-        console.log('Failed to save weights to API, using localStorage:', error);
+        console.error('Failed to save weights to API:', error);
+        alert('Failed to save weights. Please try again.');
+        return;
     }
     
-    localStorage.setItem('oceanScoreWeights', JSON.stringify(oceanScoreWeights));
     alert('Ocean Score weights saved successfully!');
     updateWeightsChart();
 }
@@ -254,9 +188,9 @@ async function saveAnalytics() {
         });
         if (response.ok) return;
     } catch (error) {
-        console.log('Failed to save analytics to API, using localStorage:', error);
+        console.error('Failed to save analytics to API:', error);
+        alert('Failed to save analytics. Please try again.');
     }
-    localStorage.setItem('adminAnalytics', JSON.stringify(analytics));
 }
 
 // Tab Management

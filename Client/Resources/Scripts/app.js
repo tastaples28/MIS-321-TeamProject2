@@ -353,7 +353,7 @@ function toggleFavorite() {
     logAnalytics('favorite', currentProductId);
   }
   
-  localStorage.setItem('favorites', JSON.stringify(favorites));
+  // Favorites stored in MySQL database via API
   
   // Update button
   const favoriteBtn = document.getElementById('favoriteBtn');
@@ -378,7 +378,7 @@ function toggleFavoriteFromCard(productId) {
     logAnalytics('favorite', productId);
   }
   
-  localStorage.setItem('favorites', JSON.stringify(favorites));
+  // Favorites stored in MySQL database via API
   
   // Refresh the current page to update the heart icons
   const currentPageElement = document.querySelector('.page-section.active');
@@ -394,8 +394,8 @@ function toggleFavoriteFromCard(productId) {
 
 // Favorites functions
 async function loadFavorites() {
-  // Load favorites from localStorage
-  favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
+  // Load favorites from API (MySQL database on Heroku)
+  // favorites array will be populated by API call
   
   const grid = document.getElementById('favorites-grid');
   
