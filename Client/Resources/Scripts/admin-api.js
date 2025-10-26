@@ -351,7 +351,7 @@ async function saveUser(event) {
         // Update existing user
         const userIndex = users.findIndex(u => u.id === parseInt(id));
         users[userIndex] = { id: parseInt(id), name, email, role, status };
-    } else {
+        } else {
         // Add new user
         const newId = users.length > 0 ? Math.max(...users.map(u => u.id)) + 1 : 1;
         users.push({ id: newId, name, email, role, status });
@@ -405,7 +405,7 @@ function renderProductsTable() {
                     <button class="btn-admin btn-admin-danger" onclick="deleteProduct(${product.id})">
                         <i class="fas fa-trash"></i>
                     </button>
-                </td>
+            </td>
             </tr>
         `;
     }).join('');
@@ -517,7 +517,7 @@ function updateWeights() {
     const alertElement = totalElement.closest('.alert');
     if (total === 100) {
         alertElement.className = 'alert alert-success mt-3';
-    } else {
+        } else {
         alertElement.className = 'alert alert-danger mt-3';
     }
     

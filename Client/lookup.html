@@ -75,6 +75,28 @@
             transform: translateY(-2px);
         }
         
+        .home-btn {
+            padding: 10px 20px;
+            border-radius: 20px;
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--sea-green);
+            border: 2px solid rgba(16, 185, 129, 0.3);
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .home-btn:hover {
+            background: rgba(16, 185, 129, 0.2);
+            transform: translateY(-2px);
+            color: var(--sea-green);
+            text-decoration: none;
+        }
+        
         .search-section {
             background: rgba(248, 250, 252, 0.95);
             backdrop-filter: blur(20px);
@@ -731,6 +753,9 @@
                 </div>
             </div>
             <div class="user-info">
+                <a href="index.html" class="home-btn">
+                    <i class="fas fa-home me-2"></i>Home
+                </a>
                 <button class="favorites-btn" onclick="showFavorites()">
                     <i class="fas fa-heart"></i>
                     My Favorites (<span id="favCount">0</span>)
@@ -1095,33 +1120,78 @@
             }
         }
 
-        function loadFavorites() {
-            const saved = localStorage.getItem('reefRatesFavorites');
-            favorites = saved ? JSON.parse(saved) : [];
-        }
-
-        function saveFavorites() {
-            localStorage.setItem('reefRatesFavorites', JSON.stringify(favorites));
-            updateFavoriteCount();
-        }
-
-        function updateFavoriteCount() {
-            document.getElementById('favCount').textContent = favorites.length;
-        }
-
-        function toggleFavorite(productId) {
-            const index = favorites.indexOf(productId);
-            if (index > -1) {
-                favorites.splice(index, 1);
-            } else {
-                favorites.push(productId);
-            }
-            saveFavorites();
+        async function loadFavorites() {
+            const user = getCurrentUser();
+            if (!user) return;
             
-            // Update UI
-            const icon = document.querySelector(`[data-product-id="${productId}"] .favorite-icon`);
-            if (icon) {
-                icon.classList.toggle('favorited');
+            try {
+                const response = await fetch(`${API_BASE}/userfavorites/${user.id}`);
+                if (response.ok) {
+                    const favoriteProducts = await response.json();
+                    favorites = favoriteProducts.map(p => p.id);
+                    updateFavoriteCount();
+                }
+            } catch (error) {
+                console.error('Error loading favorites:', error);
+            }
+        }
+
+        async function updateFavoriteCount() {
+            const user = getCurrentUser();
+            if (!user) return;
+            
+            try {
+                const response = await fetch(`${API_BASE}/userfavorites/${user.id}/favorites/count`);
+                if (response.ok) {
+                    const data = await response.json();
+                    document.getElementById('favCount').textContent = data.count || 0;
+                }
+            } catch (error) {
+                console.error('Error updating favorite count:', error);
+                document.getElementById('favCount').textContent = favorites.length;
+            }
+        }
+
+        async function toggleFavorite(productId) {
+            const user = getCurrentUser();
+            if (!user) {
+                alert('Please log in to add favorites');
+                return;
+            }
+            
+            const isFavorited = favorites.includes(productId);
+            
+            try {
+                if (isFavorited) {
+                    // Remove from favorites
+                    const response = await fetch(`${API_BASE}/userfavorites/${user.id}/favorites/${productId}`, {
+                        method: 'DELETE'
+                    });
+                    
+                    if (response.ok) {
+                        favorites = favorites.filter(id => id !== productId);
+                    }
+                } else {
+                    // Add to favorites
+                    const response = await fetch(`${API_BASE}/userfavorites/${user.id}/favorites/${productId}`, {
+                        method: 'POST'
+                    });
+                    
+                    if (response.ok) {
+                        favorites.push(productId);
+                    }
+                }
+                
+                // Update UI
+                const icon = document.querySelector(`[data-product-id="${productId}"] .favorite-icon`);
+                if (icon) {
+                    icon.classList.toggle('favorited');
+                }
+                
+                updateFavoriteCount();
+            } catch (error) {
+                console.error('Error toggling favorite:', error);
+                alert('Failed to update favorite');
             }
             
             // If favorites modal is open, refresh it
@@ -1263,9 +1333,12 @@
             document.getElementById('favoritesModal').classList.remove('show');
         }
 
-        function displayFavoritesModal() {
+        async function displayFavoritesModal() {
             const grid = document.getElementById('favoritesGrid');
             const noFavs = document.getElementById('noFavorites');
+            
+            const user = getCurrentUser();
+            if (!user) return;
             
             if (favorites.length === 0) {
                 grid.style.display = 'none';
@@ -1273,11 +1346,26 @@
                 return;
             }
             
-            grid.style.display = 'grid';
-            noFavs.style.display = 'none';
-            
-            const favoriteProducts = productsDatabase.filter(p => favorites.includes(p.id));
-            grid.innerHTML = favoriteProducts.map(product => createProductCard(product)).join('');
+            try {
+                const response = await fetch(`${API_BASE}/userfavorites/${user.id}`);
+                if (response.ok) {
+                    const favoriteProducts = await response.json();
+                    
+                    if (favoriteProducts.length === 0) {
+                        grid.style.display = 'none';
+                        noFavs.style.display = 'block';
+                        return;
+                    }
+                    
+                    grid.style.display = 'grid';
+                    noFavs.style.display = 'none';
+                    grid.innerHTML = favoriteProducts.map(product => createProductCard(product)).join('');
+                }
+            } catch (error) {
+                console.error('Error displaying favorites:', error);
+                grid.style.display = 'none';
+                noFavs.style.display = 'block';
+            }
         }
 
         function logout() {
