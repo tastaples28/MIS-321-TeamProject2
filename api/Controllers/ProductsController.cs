@@ -192,7 +192,7 @@ namespace OceanFriendlyProductFinder.Controllers
                  var insertQuery = @"
                      INSERT INTO Products (Name, Brand, Category, Description, ImageUrl, ExternalLink, 
                                          OceanScore, BiodegradabilityScore, CoralSafetyScore, FishSafetyScore, CoverageScore)
-                     VALUES (@name, @brand, @category, @description, @imageUrl, @externalLink, 0, 0, 0, 0, 0) RETURNING Id";
+                     VALUES (@name, @brand, @category, @description, @imageUrl, @externalLink, 0, 0, 0, 0, 0)";
 
                 using var cmd = new MySqlCommand(insertQuery, (MySqlConnection)connection, (MySqlTransaction)transaction);
                 cmd.Parameters.AddWithValue("@name", request.Name);
@@ -202,12 +202,13 @@ namespace OceanFriendlyProductFinder.Controllers
                 cmd.Parameters.AddWithValue("@imageUrl", request.ImageUrl ?? (object)DBNull.Value);
                 cmd.Parameters.AddWithValue("@externalLink", request.ExternalLink ?? (object)DBNull.Value);
 
-                 var productId = Convert.ToInt32(await cmd.ExecuteScalarAsync());
+                await cmd.ExecuteNonQueryAsync();
+                var productId = Convert.ToInt32(cmd.LastInsertedId);
 
                 // Link ingredients
                 foreach (var ingredientId in request.IngredientIds)
                 {
-                    var linkQuery = "INSERT INTO ProductIngredients (ProductId, IngredientId) VALUES (@productId, @ingredientId) RETURNING Id";
+                    var linkQuery = "INSERT INTO ProductIngredients (ProductId, IngredientId) VALUES (@productId, @ingredientId)";
                     using var linkCmd = new MySqlCommand(linkQuery, (MySqlConnection)connection, (MySqlTransaction)transaction);
                     linkCmd.Parameters.AddWithValue("@productId", productId);
                     linkCmd.Parameters.AddWithValue("@ingredientId", ingredientId);
