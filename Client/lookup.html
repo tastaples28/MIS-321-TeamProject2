@@ -948,15 +948,20 @@
             const user = getCurrentUser();
             if (!user) return;
             
+            const favCountElement = document.getElementById('favCount');
+            if (!favCountElement) return; // Element not found yet
+            
             try {
                 const response = await fetch(`${API_BASE}/userfavorites/${user.id}/favorites/count`);
                 if (response.ok) {
                     const data = await response.json();
-                    document.getElementById('favCount').textContent = data.count || 0;
+                    favCountElement.textContent = data.count || 0;
                 }
             } catch (error) {
                 console.error('Error updating favorite count:', error);
-                document.getElementById('favCount').textContent = favorites.length;
+                if (favCountElement) {
+                    favCountElement.textContent = favorites.length;
+                }
             }
         }
 
