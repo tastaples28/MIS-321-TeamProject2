@@ -382,8 +382,8 @@
                                     <i class="fas fa-recycle me-2"></i>Biodegradability Weight
                                 </label>
                                 <input type="range" class="weight-slider form-range" id="biodegradability-weight" 
-                                       min="0" max="100" value="30" oninput="updateWeights()">
-                                <div class="weight-display" id="biodegradability-display">30%</div>
+                                       min="0" max="100" oninput="updateWeights()">
+                                <div class="weight-display" id="biodegradability-display">0%</div>
                             </div>
                             
                             <div class="form-group">
@@ -391,8 +391,8 @@
                                     <i class="fas fa-fish me-2"></i>Coral Safety Weight
                                 </label>
                                 <input type="range" class="weight-slider form-range" id="coral-weight" 
-                                       min="0" max="100" value="30" oninput="updateWeights()">
-                                <div class="weight-display" id="coral-display">30%</div>
+                                       min="0" max="100" oninput="updateWeights()">
+                                <div class="weight-display" id="coral-display">0%</div>
                             </div>
                             
                             <div class="form-group">
@@ -400,8 +400,8 @@
                                     <i class="fas fa-water me-2"></i>Fish Safety Weight
                                 </label>
                                 <input type="range" class="weight-slider form-range" id="fish-weight" 
-                                       min="0" max="100" value="25" oninput="updateWeights()">
-                                <div class="weight-display" id="fish-display">25%</div>
+                                       min="0" max="100" oninput="updateWeights()">
+                                <div class="weight-display" id="fish-display">0%</div>
                             </div>
                             
                             <div class="form-group">
@@ -409,12 +409,12 @@
                                     <i class="fas fa-globe me-2"></i>Coverage Weight
                                 </label>
                                 <input type="range" class="weight-slider form-range" id="coverage-weight" 
-                                       min="0" max="100" value="15" oninput="updateWeights()">
-                                <div class="weight-display" id="coverage-display">15%</div>
+                                       min="0" max="100" oninput="updateWeights()">
+                                <div class="weight-display" id="coverage-display">0%</div>
                             </div>
                             
                             <div class="alert alert-success mt-3">
-                                <strong>Total Weight:</strong> <span id="total-weight">100</span>%
+                                <strong>Total Weight:</strong> <span id="total-weight">0</span>%
                             </div>
                             
                             <button class="btn-admin btn-admin-primary w-100" onclick="saveWeights()">
@@ -564,8 +564,8 @@
                 </div>
                 
                 <div class="form-group">
-                    <label class="form-label">Ocean Score (0-100)</label>
-                    <input type="number" class="form-control" id="product-score" min="0" max="100" required>
+                    <label class="form-label">Ocean Score (1-100)</label>
+                    <input type="number" class="form-control" id="product-score" min="1" max="100" required>
                 </div>
                 
                 <div class="form-group">
@@ -597,7 +597,7 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="Resources/Scripts/api-config.js?v=3"></script>
-    <script src="Resources/Scripts/admin-api.js?v=2"></script>
+    <script src="Resources/Scripts/admin-api.js?v=OCEAN-SCORE-FIX"></script>
 </body>
 </html>
 

@@ -28,6 +28,11 @@ namespace OceanFriendlyProductFinder.Models
         public string? ImageUrl { get; set; }
         public string? ExternalLink { get; set; }
         public List<int> IngredientIds { get; set; } = new List<int>();
+        public int? OceanScore { get; set; }
+        public int? BiodegradabilityScore { get; set; }
+        public int? CoralSafetyScore { get; set; }
+        public int? FishSafetyScore { get; set; }
+        public int? CoverageScore { get; set; }
     }
 
     public class ProductSearchRequest

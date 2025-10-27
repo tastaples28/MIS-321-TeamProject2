@@ -1,13 +1,18 @@
 // Admin Portal JavaScript with API Integration
+console.log('==========================================');
+console.log('admin-api.js LOADED - VERIFIED FILE VERSION');
+console.log('Current Date:', new Date().toISOString());
+console.log('API Base URL:', window.API_BASE);
+console.log('==========================================');
 
-// Initialize data storage
+// Initialize data storage (NO hardcoded values - all data loaded from database)
 let users = [];
 let products = [];
 let oceanScoreWeights = {
-    biodegradability: 30,
-    coral: 30,
-    fish: 25,
-    coverage: 15
+    biodegradability: null,
+    coral: null,
+    fish: null,
+    coverage: null
 };
 let analytics = {
     searchCounts: {},
@@ -19,21 +24,43 @@ let analytics = {
 let weightsChart, searchChart, favoritesChart, scoreDistChart, clicksChart;
 
 // Initialize on page load
-document.addEventListener('DOMContentLoaded', function() {
-    loadData();
-    showAdminTab('users');
+document.addEventListener('DOMContentLoaded', async function() {
+    // Load data first, then show tab
+    await loadData();
+    
+    // Get the active tab from URL hash or default to 'users'
+    const hash = window.location.hash.replace('#', '');
+    const activeTab = hash || 'users';
+    
+    showAdminTab(activeTab);
+    
+    // Update URL hash when tab changes
+    document.querySelectorAll('.admin-tab-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const tabName = this.getAttribute('onclick').match(/'([^']+)'/)[1];
+            window.location.hash = tabName;
+        });
+    });
 });
 
-// Load data from API or localStorage
+// Load data from API (no local storage)
 async function loadData() {
     try {
-        // Try to load from API first
+        console.log('📥 LOADING ALL DATA FROM HEROKU API (NO LOCAL STORAGE)');
+        console.log('API Endpoint:', window.API_BASE);
+        
+        // Load all data from API only
         await loadUsersFromAPI();
         await loadProductsFromAPI();
         await loadWeightsFromAPI();
         await loadAnalyticsFromAPI();
+        
+        console.log('✅ ALL DATA LOADED FROM HEROKU DATABASE');
+        console.log(`- Users: ${users.length}`);
+        console.log(`- Products: ${products.length}`);
+        console.log(`- Analytics: ${Object.keys(analytics.searchCounts).length} products tracked`);
     } catch (error) {
-        console.log('API not available:', error);
+        console.error('❌ API not available:', error);
         alert('Unable to connect to server. Please refresh the page.');
     }
 }
@@ -57,15 +84,21 @@ async function loadUsersFromAPI() {
 
 async function loadProductsFromAPI() {
     try {
+        const url = `${window.API_BASE}/products?page=1&pageSize=100`;
+        console.log('Loading products from:', url);
+        
         // Fetch products with pagination to get all products
-        const response = await fetch(`${window.API_BASE}/products?page=1&pageSize=100`);
+        const response = await fetch(url);
+        console.log('Load products response status:', response.status);
+        
         if (response.ok) {
             const data = await response.json();
             console.log('API response:', data);
             
             // API returns { Products: [...], TotalCount, Page, PageSize }
             const apiProducts = data.Products || data.products || data; // Handle both formats
-            console.log('Loaded products:', apiProducts);
+            console.log('Loaded products from API:', apiProducts);
+            console.log('Number of products loaded:', Array.isArray(apiProducts) ? apiProducts.length : 'Not an array');
             
             if (!Array.isArray(apiProducts)) {
                 console.error('Products is not an array:', apiProducts);
@@ -82,13 +115,18 @@ async function loadProductsFromAPI() {
                 image: p.ImageUrl || p.imageUrl || `https://placehold.co/400x400/0EA5E9/FFFFFF?text=${encodeURIComponent((p.Name || p.name || '').substring(0, 20))}`,
                 reason: p.Description || p.description || 'No description available'
             }));
-            console.log('Converted products:', products);
+            console.log('Converted products to admin format:', products);
+            console.log('Total products after conversion:', products.length);
             return;
+        } else {
+            const errorText = await response.text();
+            console.error('Failed to load products. Status:', response.status, 'Error:', errorText);
+            throw new Error(`API returned status ${response.status}: ${errorText}`);
         }
     } catch (error) {
         console.error('Failed to load products from API:', error);
+        throw error;
     }
-    throw new Error('API not available');
 }
 
 async function loadWeightsFromAPI() {
@@ -96,11 +134,18 @@ async function loadWeightsFromAPI() {
         const response = await fetch(`${window.API_BASE}/admin/ocean-score-weights`);
         if (response.ok) {
             const weights = await response.json();
-            oceanScoreWeights = weights;
+            // Convert decimal weights to percentages
+            // API returns lowercase property names: biodegradabilityWeight, coralSafetyWeight, etc.
+            oceanScoreWeights = {
+                biodegradability: Math.round((weights.biodegradabilityWeight || weights.BiodegradabilityWeight || 0.30) * 100),
+                coral: Math.round((weights.coralSafetyWeight || weights.CoralSafetyWeight || 0.30) * 100),
+                fish: Math.round((weights.fishSafetyWeight || weights.FishSafetyWeight || 0.25) * 100),
+                coverage: Math.round((weights.coverageWeight || weights.CoverageWeight || 0.15) * 100)
+            };
             return;
         }
     } catch (error) {
-        console.log('Failed to load weights from API:', error);
+        console.error('Failed to load weights from API:', error);
     }
     throw new Error('API not available');
 }
@@ -155,9 +200,9 @@ async function saveUsers() {
 }
 
 async function saveProducts() {
-    // Products are saved individually via API, not as a bulk operation
-    // This function is a placeholder and not used
-    console.log('Products are saved individually via API on create/update');
+    // Products are saved individually via API endpoints (POST, PUT, DELETE)
+    // This function is intentionally empty - products are saved directly via API calls
+    console.log('✓ PRODUCTS: Saved via API calls, NO local storage');
     return;
 }
 
@@ -175,37 +220,37 @@ async function saveWeights() {
     }
     
     oceanScoreWeights = {
-        biodegradability: bio,
-        coral: coral,
-        fish: fish,
-        coverage: coverage
+        BiodegradabilityWeight: bio / 100,
+        CoralSafetyWeight: coral / 100,
+        FishSafetyWeight: fish / 100,
+        CoverageWeight: coverage / 100
     };
     
     try {
         const response = await fetch(`${window.API_BASE}/admin/ocean-score-weights`, {
-            method: 'POST',
+            method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(oceanScoreWeights)
         });
         if (response.ok) {
-            alert('Ocean Score weights saved successfully!');
+            alert('Ocean Score weights saved successfully to database!');
             updateWeightsChart();
             return;
+        } else {
+            const error = await response.text();
+            alert(`Failed to save weights: ${error}`);
+            console.error('Failed to save weights:', error);
         }
     } catch (error) {
         console.error('Failed to save weights to API:', error);
         alert('Failed to save weights. Please try again.');
-        return;
     }
-    
-    alert('Ocean Score weights saved successfully!');
-    updateWeightsChart();
 }
 
 async function saveAnalytics() {
-    // Note: Analytics are automatically logged to the database by user actions
-    // Changes are saved in local memory only for this admin session
-    console.log('Analytics saved to local memory (not persisted to database)');
+    // Analytics are automatically logged to the database by user actions via /analytics/log endpoint
+    // The analytics data displayed in the admin panel is fetched from the database
+    console.log('✓ ANALYTICS: Saved to DATABASE, NO local storage');
     return;
 }
 
@@ -239,13 +284,33 @@ function showAdminTab(tabName, clickedButton) {
             renderUsersTable();
             break;
         case 'products':
-            renderProductsTable();
+            // Always reload products from API to ensure we have latest data from database
+            loadProductsFromAPI().then(() => {
+                renderProductsTable();
+            }).catch(error => {
+                console.error('Failed to reload products from database:', error);
+                // Still render with current data if API fails
+                renderProductsTable();
+            });
             break;
         case 'ocean-score':
-            renderOceanScoreSettings();
+            // Always reload weights from database to ensure we have latest data
+            loadWeightsFromAPI().then(() => {
+                renderOceanScoreSettings();
+            }).catch(error => {
+                console.error('Failed to reload weights from database:', error);
+                // Still render with current data if API fails
+                renderOceanScoreSettings();
+            });
             break;
         case 'analytics':
-            renderAnalytics();
+            // Always reload analytics from database when switching to analytics tab
+            loadAnalyticsFromAPI().then(() => {
+                renderAnalytics();
+            }).catch(error => {
+                console.error('Failed to reload analytics from database:', error);
+                renderAnalytics(); // Still render with current data if API fails
+            });
             break;
     }
 }
@@ -449,12 +514,43 @@ async function saveProduct(event) {
     const reason = document.getElementById('product-reason').value;
     
     if (id) {
-        // Update existing product - for now just update local data
-        const productIndex = products.findIndex(p => p.id === parseInt(id));
-        products[productIndex] = { id: parseInt(id), name, category, score, harmfulIngredients, image, reason };
-        await loadProductsFromAPI(); // Reload from API
-        renderProductsTable();
-        closeProductModal();
+        // Update existing product via API
+        try {
+            const brand = category; // Use category as brand for now
+            const response = await fetch(`${window.API_BASE}/products/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    name: name,
+                    brand: brand,
+                    category: category,
+                    description: reason || null,
+                    imageUrl: image || null,
+                    externalLink: null,
+                    ingredientIds: [], // No ingredients for now
+                    oceanScore: score || null,
+                    biodegradabilityScore: score || null,
+                    coralSafetyScore: score || null,
+                    fishSafetyScore: score || null,
+                    coverageScore: score || null
+                })
+            });
+            
+            if (response.ok) {
+                // Reload products from API to reflect changes
+                await loadProductsFromAPI();
+                renderProductsTable();
+                alert('Product updated successfully!');
+                closeProductModal();
+            } else {
+                const error = await response.text();
+                alert(`Failed to update product: ${error}`);
+                console.error('Failed to update product:', error);
+            }
+        } catch (error) {
+            console.error('Error updating product:', error);
+            alert('Error updating product. Please try again.');
+        }
     } else {
         // Add new product via API
         try {
@@ -469,7 +565,12 @@ async function saveProduct(event) {
                     description: reason || null,
                     imageUrl: image || null,
                     externalLink: null,
-                    ingredientIds: [] // No ingredients for now
+                    ingredientIds: [], // No ingredients for now
+                    oceanScore: score || null,
+                    biodegradabilityScore: score || null,
+                    coralSafetyScore: score || null,
+                    fishSafetyScore: score || null,
+                    coverageScore: score || null
                 })
             });
             
@@ -491,19 +592,44 @@ async function saveProduct(event) {
 }
 
 async function deleteProduct(id) {
-    if (!confirm('Are you sure you want to delete this product?')) return;
+    if (!confirm('Are you sure you want to delete this product from the database?')) return;
     
-    const product = products.find(p => p.id === id);
-    if (product) {
-        delete analytics.searchCounts[product.name];
-        delete analytics.favorites[product.name];
-        delete analytics.clicks[product.name];
+    console.log('Attempting to delete product with ID:', id);
+    console.log('API Base URL:', window.API_BASE);
+    
+    try {
+        const deleteUrl = `${window.API_BASE}/products/${id}`;
+        console.log('Delete URL:', deleteUrl);
+        
+        const response = await fetch(deleteUrl, {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' }
+        });
+        
+        console.log('Delete response status:', response.status);
+        
+        if (response.ok || response.status === 204) {
+            console.log('Product deleted successfully from database');
+            
+            // Reload products from API to ensure sync with database
+            console.log('Reloading products from database...');
+            await loadProductsFromAPI();
+            console.log('Products reloaded. Current count:', products.length);
+            
+            // Reload analytics from database (no local storage manipulation)
+            await loadAnalyticsFromAPI();
+            
+            renderProductsTable();
+            alert('Product deleted successfully from database!');
+        } else {
+            const error = await response.text();
+            alert(`Failed to delete product: ${error}`);
+            console.error('Failed to delete product. Status:', response.status, 'Error:', error);
+        }
+    } catch (error) {
+        console.error('Error deleting product:', error);
+        alert('Error deleting product. Please try again.');
     }
-    
-    products = products.filter(p => p.id !== id);
-    await saveProducts();
-    await saveAnalytics();
-    renderProductsTable();
 }
 
 function closeProductModal() {
@@ -512,10 +638,19 @@ function closeProductModal() {
 
 // OCEAN SCORE SETTINGS
 function renderOceanScoreSettings() {
-    document.getElementById('biodegradability-weight').value = oceanScoreWeights.biodegradability;
-    document.getElementById('coral-weight').value = oceanScoreWeights.coral;
-    document.getElementById('fish-weight').value = oceanScoreWeights.fish;
-    document.getElementById('coverage-weight').value = oceanScoreWeights.coverage;
+    // Only set values if they exist (loaded from database)
+    if (oceanScoreWeights.biodegradability !== null) {
+        document.getElementById('biodegradability-weight').value = oceanScoreWeights.biodegradability;
+    }
+    if (oceanScoreWeights.coral !== null) {
+        document.getElementById('coral-weight').value = oceanScoreWeights.coral;
+    }
+    if (oceanScoreWeights.fish !== null) {
+        document.getElementById('fish-weight').value = oceanScoreWeights.fish;
+    }
+    if (oceanScoreWeights.coverage !== null) {
+        document.getElementById('coverage-weight').value = oceanScoreWeights.coverage;
+    }
     
     updateWeights();
     updateWeightsChart();
@@ -583,7 +718,14 @@ function updateWeightsChart() {
 }
 
 // ANALYTICS
-function renderAnalytics() {
+async function renderAnalytics() {
+    // Always reload analytics from database to ensure we have latest data
+    try {
+        await loadAnalyticsFromAPI();
+    } catch (error) {
+        console.error('Failed to reload analytics from database:', error);
+    }
+    
     // Update stats
     document.getElementById('total-users').textContent = users.length;
     document.getElementById('total-products').textContent = products.length;

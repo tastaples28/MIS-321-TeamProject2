@@ -215,15 +215,28 @@ namespace OceanFriendlyProductFinder.Controllers
                     await linkCmd.ExecuteNonQueryAsync();
                 }
 
-                // Calculate Ocean Score
-                var breakdown = await _oceanScoreService.CalculateOceanScoreAsync(productId);
+                // Calculate scores - use manual scores if provided, otherwise calculate
+                int oceanScore, bioScore, coralScore, fishScore, coverageScore;
                 
-                // Ensure scores are at least 1 to satisfy the database constraint
-                var oceanScore = Math.Max(1, breakdown.TotalScore);
-                var bioScore = Math.Max(1, breakdown.BiodegradabilityScore);
-                var coralScore = Math.Max(1, breakdown.CoralSafetyScore);
-                var fishScore = Math.Max(1, breakdown.FishSafetyScore);
-                var coverageScore = Math.Max(1, breakdown.CoverageScore);
+                if (request.OceanScore.HasValue)
+                {
+                    // Use manually provided scores
+                    oceanScore = Math.Max(1, request.OceanScore.Value);
+                    bioScore = request.BiodegradabilityScore ?? oceanScore;
+                    coralScore = request.CoralSafetyScore ?? oceanScore;
+                    fishScore = request.FishSafetyScore ?? oceanScore;
+                    coverageScore = request.CoverageScore ?? oceanScore;
+                }
+                else
+                {
+                    // Calculate from ingredients
+                    var breakdown = await _oceanScoreService.CalculateOceanScoreAsync(productId);
+                    oceanScore = Math.Max(1, breakdown.TotalScore);
+                    bioScore = Math.Max(1, breakdown.BiodegradabilityScore);
+                    coralScore = Math.Max(1, breakdown.CoralSafetyScore);
+                    fishScore = Math.Max(1, breakdown.FishSafetyScore);
+                    coverageScore = Math.Max(1, breakdown.CoverageScore);
+                }
                 
                 var updateQuery = @"
                     UPDATE Products 
@@ -298,15 +311,35 @@ namespace OceanFriendlyProductFinder.Controllers
 
                 foreach (var ingredientId in request.IngredientIds)
                 {
-                    var linkQuery = "INSERT INTO ProductIngredients (ProductId, IngredientId) VALUES (@productId, @ingredientId) RETURNING Id";
+                    var linkQuery = "INSERT INTO ProductIngredients (ProductId, IngredientId) VALUES (@productId, @ingredientId)";
                     using var linkCmd = new MySqlCommand(linkQuery, (MySqlConnection)connection, (MySqlTransaction)transaction);
                     linkCmd.Parameters.AddWithValue("@productId", id);
                     linkCmd.Parameters.AddWithValue("@ingredientId", ingredientId);
                     await linkCmd.ExecuteNonQueryAsync();
                 }
 
-                // Recalculate Ocean Score
-                var breakdown = await _oceanScoreService.CalculateOceanScoreAsync(id);
+                // Calculate scores - use manual scores if provided, otherwise calculate
+                int oceanScore, bioScore, coralScore, fishScore, coverageScore;
+                
+                if (request.OceanScore.HasValue)
+                {
+                    // Use manually provided scores
+                    oceanScore = Math.Max(1, request.OceanScore.Value);
+                    bioScore = request.BiodegradabilityScore ?? oceanScore;
+                    coralScore = request.CoralSafetyScore ?? oceanScore;
+                    fishScore = request.FishSafetyScore ?? oceanScore;
+                    coverageScore = request.CoverageScore ?? oceanScore;
+                }
+                else
+                {
+                    // Calculate from ingredients
+                    var breakdown = await _oceanScoreService.CalculateOceanScoreAsync(id);
+                    oceanScore = Math.Max(1, breakdown.TotalScore);
+                    bioScore = Math.Max(1, breakdown.BiodegradabilityScore);
+                    coralScore = Math.Max(1, breakdown.CoralSafetyScore);
+                    fishScore = Math.Max(1, breakdown.FishSafetyScore);
+                    coverageScore = Math.Max(1, breakdown.CoverageScore);
+                }
                 
                 var scoreUpdateQuery = @"
                     UPDATE Products 
@@ -319,11 +352,11 @@ namespace OceanFriendlyProductFinder.Controllers
                     WHERE Id = @productId";
 
                 using var scoreUpdateCmd = new MySqlCommand(scoreUpdateQuery, (MySqlConnection)connection, (MySqlTransaction)transaction);
-                scoreUpdateCmd.Parameters.AddWithValue("@oceanScore", breakdown.TotalScore);
-                scoreUpdateCmd.Parameters.AddWithValue("@bioScore", breakdown.BiodegradabilityScore);
-                scoreUpdateCmd.Parameters.AddWithValue("@coralScore", breakdown.CoralSafetyScore);
-                scoreUpdateCmd.Parameters.AddWithValue("@fishScore", breakdown.FishSafetyScore);
-                scoreUpdateCmd.Parameters.AddWithValue("@coverageScore", breakdown.CoverageScore);
+                scoreUpdateCmd.Parameters.AddWithValue("@oceanScore", oceanScore);
+                scoreUpdateCmd.Parameters.AddWithValue("@bioScore", bioScore);
+                scoreUpdateCmd.Parameters.AddWithValue("@coralScore", coralScore);
+                scoreUpdateCmd.Parameters.AddWithValue("@fishScore", fishScore);
+                scoreUpdateCmd.Parameters.AddWithValue("@coverageScore", coverageScore);
                 scoreUpdateCmd.Parameters.AddWithValue("@productId", id);
 
                 await scoreUpdateCmd.ExecuteNonQueryAsync();

@@ -2,12 +2,40 @@
 let currentProductId = null;
 let currentPage = 1;
 let totalPages = 1;
+let favorites = []; // Array of product IDs that are favorited by the current user
 
 // Initialize the application
 document.addEventListener('DOMContentLoaded', function() {
   console.log('Initializing application');
+  loadFavorites(); // Load favorites from database on startup
   showPage('home');
 });
+
+// Load favorites from database
+async function loadFavorites() {
+  const user = getCurrentUser();
+  if (!user) {
+    favorites = [];
+    return;
+  }
+  
+  try {
+    const response = await fetch(`${window.API_BASE}/userfavorites/${user.id}`);
+    if (response.ok) {
+      const favoriteProducts = await response.json();
+      favorites = favoriteProducts.map(p => p.id || p.Id);
+      console.log('Loaded favorites from database:', favorites);
+    }
+  } catch (error) {
+    console.error('Error loading favorites from API:', error);
+    favorites = [];
+  }
+}
+
+// Reload favorites when user logs in (can be called from user-auth.js)
+function reloadFavoritesAfterLogin() {
+  loadFavorites();
+}
 
 // Navigation functions
 function showPage(pageName) {
@@ -38,7 +66,10 @@ function showPage(pageName) {
     navLink.classList.add('active');
     console.log('Nav link activated:', pageName);
   } else {
-    console.error('Nav link not found for:', pageName);
+    // Don't show error for home page as it doesn't have a nav link in this single-page app
+    if (pageName !== 'home') {
+      console.error('Nav link not found for:', pageName);
+    }
   }
   
   // Load page-specific data
@@ -336,61 +367,119 @@ function displayProductModal(product) {
   modal.show();
 }
 
-function toggleFavorite() {
+async function toggleFavorite() {
   if (!currentProductId) return;
   
-  const index = favorites.indexOf(currentProductId);
-  if (index > -1) {
-    favorites.splice(index, 1);
-    logAnalytics('unfavorite', currentProductId);
-  } else {
-    favorites.push(currentProductId);
-    logAnalytics('favorite', currentProductId);
+  const user = getCurrentUser();
+  if (!user) {
+    showError('Please log in to add favorites');
+    return;
   }
   
-  // Favorites stored in MySQL database via API
+  const index = favorites.indexOf(currentProductId);
+  const isRemoving = index > -1;
   
-  // Update button
-  const favoriteBtn = document.getElementById('favoriteBtn');
-  const isFavorite = favorites.includes(currentProductId);
-  favoriteBtn.innerHTML = isFavorite ? 
-    '<i class="fas fa-heart text-danger"></i> Remove from Favorites' : 
-    '<i class="fas fa-heart"></i> Add to Favorites';
-  
-  // Update favorites page if it's currently active
-  if (document.getElementById('favorites-page').classList.contains('active')) {
-    loadFavorites();
+  try {
+    if (isRemoving) {
+      // Remove from database
+      const response = await fetch(`${window.API_BASE}/userfavorites/${user.id}/favorites/${currentProductId}`, {
+        method: 'DELETE'
+      });
+      if (response.ok) {
+        favorites.splice(index, 1);
+        await logAnalytics('unfavorite', currentProductId);
+      } else {
+        throw new Error('Failed to remove from favorites');
+      }
+    } else {
+      // Add to database
+      const response = await fetch(`${window.API_BASE}/userfavorites/${user.id}/favorites/${currentProductId}`, {
+        method: 'POST'
+      });
+      if (response.ok) {
+        favorites.push(currentProductId);
+        await logAnalytics('favorite', currentProductId);
+      } else {
+        throw new Error('Failed to add to favorites');
+      }
+    }
+    
+    // Update button
+    const favoriteBtn = document.getElementById('favoriteBtn');
+    const isFavorite = favorites.includes(currentProductId);
+    favoriteBtn.innerHTML = isFavorite ? 
+      '<i class="fas fa-heart text-danger"></i> Remove from Favorites' : 
+      '<i class="fas fa-heart"></i> Add to Favorites';
+    
+    // Update favorites page if it's currently active
+    const favoritesPage = document.getElementById('favorites-page');
+    if (favoritesPage && favoritesPage.classList.contains('active')) {
+      loadFavoritesPage();
+    }
+  } catch (error) {
+    console.error('Error toggling favorite:', error);
+    showError('Failed to update favorites. Please try again.');
   }
 }
 
-function toggleFavoriteFromCard(productId) {
-  const index = favorites.indexOf(productId);
-  if (index > -1) {
-    favorites.splice(index, 1);
-    logAnalytics('unfavorite', productId);
-  } else {
-    favorites.push(productId);
-    logAnalytics('favorite', productId);
+async function toggleFavoriteFromCard(productId) {
+  const user = getCurrentUser();
+  if (!user) {
+    showError('Please log in to add favorites');
+    return;
   }
   
-  // Favorites stored in MySQL database via API
+  const index = favorites.indexOf(productId);
+  const isRemoving = index > -1;
   
-  // Refresh the current page to update the heart icons
-  const currentPageElement = document.querySelector('.page-section.active');
-  if (currentPageElement) {
-    const pageId = currentPageElement.id;
-    if (pageId === 'products-page') {
-      searchProducts(); // Refresh products page
-    } else if (pageId === 'favorites-page') {
-      loadFavorites(); // Refresh favorites page
+  try {
+    if (isRemoving) {
+      // Remove from database
+      const response = await fetch(`${window.API_BASE}/userfavorites/${user.id}/favorites/${productId}`, {
+        method: 'DELETE'
+      });
+      if (response.ok) {
+        favorites.splice(index, 1);
+        await logAnalytics('unfavorite', productId);
+      } else {
+        throw new Error('Failed to remove from favorites');
+      }
+    } else {
+      // Add to database
+      const response = await fetch(`${window.API_BASE}/userfavorites/${user.id}/favorites/${productId}`, {
+        method: 'POST'
+      });
+      if (response.ok) {
+        favorites.push(productId);
+        await logAnalytics('favorite', productId);
+      } else {
+        throw new Error('Failed to add to favorites');
+      }
     }
+    
+    // Refresh the current page to update the heart icons
+    const currentPageElement = document.querySelector('.page-section.active');
+    if (currentPageElement) {
+      const pageId = currentPageElement.id;
+      if (pageId === 'products-page') {
+        searchProducts(); // Refresh products page
+      } else if (pageId === 'favorites-page') {
+        loadFavoritesPage(); // Refresh favorites page
+      }
+    }
+  } catch (error) {
+    console.error('Error toggling favorite:', error);
+    showError('Failed to update favorites. Please try again.');
   }
 }
 
 // Favorites functions
-async function loadFavorites() {
-  // Load favorites from API (MySQL database on Heroku)
-  // favorites array will be populated by API call
+async function loadFavoritesPage() {
+  const user = getCurrentUser();
+  if (!user) {
+    showError('Please log in to view your favorites');
+    return;
+  }
   
   const grid = document.getElementById('favorites-grid');
   
@@ -414,24 +503,17 @@ async function loadFavorites() {
   
   try {
     // Fetch favorite products from API
-    const favoriteProducts = [];
-    for (const productId of favorites) {
-      try {
-        const response = await fetch(`${window.API_BASE}/products/${productId}`);
-        if (response.ok) {
-          const product = await response.json();
-          favoriteProducts.push(product);
-        }
-      } catch (error) {
-        console.error(`Failed to load product ${productId}:`, error);
-      }
+    const response = await fetch(`${window.API_BASE}/userfavorites/${user.id}`);
+    if (!response.ok) {
+      throw new Error('Failed to load favorites');
     }
     
+    const favoriteProducts = await response.json();
     displayFavorites(favoriteProducts);
     
   } catch (error) {
-    console.error('Error loading favorites:', error);
-    showError('Failed to load favorites.');
+    console.error('Error loading favorites from database:', error);
+    showError('Failed to load favorites from database.');
   }
 }
 

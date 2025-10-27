@@ -193,7 +193,10 @@ namespace OceanFriendlyProductFinder.Services
 
         private async Task RecalculateAllProductScoresAsync(IDbConnection connection)
         {
-            // Get all product IDs
+            // Get current weights from database
+            var weights = await GetCurrentWeightsAsync(connection);
+
+            // Get all product IDs (close reader before reusing connection)
             var productQuery = "SELECT Id FROM Products";
             using var productCmd = new MySqlCommand(productQuery, (MySqlConnection)connection);
             using var productReader = await productCmd.ExecuteReaderAsync();
@@ -204,10 +207,56 @@ namespace OceanFriendlyProductFinder.Services
                 productIds.Add(productReader.GetInt32("Id"));
             }
 
-            // Recalculate scores for each product
-            foreach (var productId in productIds)
+            // Recalculate scores for each product - must close previous reader before executing new commands
+            using (var tempConnection = _databaseService.GetConnection())
             {
-                var breakdown = await CalculateOceanScoreAsync(productId);
+                tempConnection.Open();
+                
+                foreach (var productId in productIds)
+                {
+                    // Get product ingredients with their scores using a separate connection
+                    var ingredientsQuery = @"
+                        SELECT i.Id, i.Name, i.IsReefSafe, i.BiodegradabilityScore, 
+                               i.CoralSafetyScore, i.FishSafetyScore, i.CoverageScore
+                        FROM Ingredients i
+                        INNER JOIN ProductIngredients pi ON i.Id = pi.IngredientId
+                        WHERE pi.ProductId = @productId";
+
+                    using var ingredientsCmd = new MySqlCommand(ingredientsQuery, (MySqlConnection)tempConnection);
+                    ingredientsCmd.Parameters.AddWithValue("@productId", productId);
+
+                    var ingredients = new List<Ingredient>();
+                    using (var ingredientsReader = await ingredientsCmd.ExecuteReaderAsync())
+                    {
+                        while (await ingredientsReader.ReadAsync())
+                        {
+                            ingredients.Add(new Ingredient
+                            {
+                                Id = ingredientsReader.GetInt32(ingredientsReader.GetOrdinal("Id")),
+                                Name = ingredientsReader.GetString(ingredientsReader.GetOrdinal("Name")),
+                                IsReefSafe = ingredientsReader.GetBoolean(ingredientsReader.GetOrdinal("IsReefSafe")),
+                                BiodegradabilityScore = ingredientsReader.GetInt32(ingredientsReader.GetOrdinal("BiodegradabilityScore")),
+                                CoralSafetyScore = ingredientsReader.GetInt32(ingredientsReader.GetOrdinal("CoralSafetyScore")),
+                                FishSafetyScore = ingredientsReader.GetInt32(ingredientsReader.GetOrdinal("FishSafetyScore")),
+                                CoverageScore = ingredientsReader.GetInt32(ingredientsReader.GetOrdinal("CoverageScore"))
+                            });
+                        }
+                    } // Reader is now fully closed before proceeding
+
+                    if (!ingredients.Any())
+                    {
+                        continue;
+                    }
+
+                    // Calculate weighted scores
+                    var biodegradabilityScore = CalculateWeightedScore(ingredients, i => i.BiodegradabilityScore, weights.BiodegradabilityWeight);
+                    var coralSafetyScore = CalculateWeightedScore(ingredients, i => i.CoralSafetyScore, weights.CoralSafetyWeight);
+                    var fishSafetyScore = CalculateWeightedScore(ingredients, i => i.FishSafetyScore, weights.FishSafetyWeight);
+                    var coverageScore = CalculateWeightedScore(ingredients, i => i.CoverageScore, weights.CoverageWeight);
+
+                    // Calculate total Ocean Score (1-100)
+                    var totalScore = Math.Max(1, Math.Min(100, 
+                        (int)Math.Round(biodegradabilityScore + coralSafetyScore + fishSafetyScore + coverageScore)));
                 
                 var updateQuery = @"
                     UPDATE Products 
@@ -219,15 +268,16 @@ namespace OceanFriendlyProductFinder.Services
                         UpdatedAt = CURRENT_TIMESTAMP
                     WHERE Id = @productId";
 
-                using var updateCmd = new MySqlCommand(updateQuery, (MySqlConnection)connection);
-                updateCmd.Parameters.AddWithValue("@oceanScore", breakdown.TotalScore);
-                updateCmd.Parameters.AddWithValue("@bioScore", breakdown.BiodegradabilityScore);
-                updateCmd.Parameters.AddWithValue("@coralScore", breakdown.CoralSafetyScore);
-                updateCmd.Parameters.AddWithValue("@fishScore", breakdown.FishSafetyScore);
-                updateCmd.Parameters.AddWithValue("@coverageScore", breakdown.CoverageScore);
+                    using var updateCmd = new MySqlCommand(updateQuery, (MySqlConnection)tempConnection);
+                    updateCmd.Parameters.AddWithValue("@oceanScore", totalScore);
+                    updateCmd.Parameters.AddWithValue("@bioScore", (int)Math.Round(biodegradabilityScore));
+                    updateCmd.Parameters.AddWithValue("@coralScore", (int)Math.Round(coralSafetyScore));
+                    updateCmd.Parameters.AddWithValue("@fishScore", (int)Math.Round(fishSafetyScore));
+                    updateCmd.Parameters.AddWithValue("@coverageScore", (int)Math.Round(coverageScore));
                 updateCmd.Parameters.AddWithValue("@productId", productId);
 
                 await updateCmd.ExecuteNonQueryAsync();
+                }
             }
         }
     }

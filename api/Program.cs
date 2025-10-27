@@ -47,8 +47,16 @@ app.UseCors("AllowAll");
 app.UseHttpsRedirection();
 
 // Serve static files from the Client directory
-var clientPath = Path.Combine(Directory.GetCurrentDirectory(), "..", "Client");
+// On Heroku, the path is MIS-321-TeamProject2/Client
+var baseDir = Directory.GetCurrentDirectory();
+var clientPath = Path.Combine(baseDir, "..", "MIS-321-TeamProject2", "Client");
+if (!Directory.Exists(clientPath))
+{
+    // Try alternative path
+    clientPath = Path.Combine(baseDir, "..", "..", "MIS-321-TeamProject2", "Client");
+}
 Console.WriteLine($"Serving static files from: {clientPath}");
+Console.WriteLine($"Current directory: {baseDir}");
 
 app.UseDefaultFiles(new DefaultFilesOptions
 {

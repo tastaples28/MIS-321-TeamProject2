@@ -83,6 +83,10 @@ async function loginUser(username, password) {
             // Store in sessionStorage (session data only, not persistent user data)
             sessionStorage.setItem('currentUser', JSON.stringify(currentUser));
             updateUIForLoggedInUser();
+            // Reload favorites for the user
+            if (typeof reloadFavoritesAfterLogin === 'function') {
+                reloadFavoritesAfterLogin();
+            }
             return { success: true, message: data.message, user: data.user };
         } else {
             return { success: false, message: data.message || 'Login failed' };
