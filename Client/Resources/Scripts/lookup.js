@@ -201,7 +201,9 @@ function displayProducts() {
     const grid = document.getElementById('productsGrid');
     
     let filtered = productsDatabase.filter(product => {
-        const matchesCategory = currentCategory === 'all' || product.category === currentCategory;
+        // Case-insensitive category matching
+        const matchesCategory = currentCategory === 'all' || 
+                               product.category.toLowerCase().trim() === currentCategory.toLowerCase().trim();
         const matchesSearch = product.name.toLowerCase().includes(currentSearch) || 
                              product.category.toLowerCase().includes(currentSearch);
         return matchesCategory && matchesSearch;
